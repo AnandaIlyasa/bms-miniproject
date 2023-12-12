@@ -1,4 +1,4 @@
-﻿namespace bms.Model;
+﻿namespace Bts.Model;
 
 abstract class BaseModel
 {

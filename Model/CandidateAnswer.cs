@@ -1,17 +1,9 @@
-﻿namespace bms.Model;
+﻿namespace Bts.Model;
 
 internal class CandidateAnswer : BaseModel
 {
-    public string? AnswerContent { get; set; }
-    public Package ExamPackage { get; init; }
-    public MultipleChoiceOption? ChoiceOption { get; init; }
+    public ExamPackage ExamPackage { get; init; }
     public Question Question { get; init; }
-
-    public CandidateAnswer(string? answerContent, Package examPackage, MultipleChoiceOption? choiceOption, Question question)
-    {
-        AnswerContent = answerContent;
-        ExamPackage = examPackage;
-        ChoiceOption = choiceOption;
-        Question = question;
-    }
+    public string? AnswerContent { get; init; }
+    public MultipleChoiceOption? ChoiceOption { get; init; }
 }

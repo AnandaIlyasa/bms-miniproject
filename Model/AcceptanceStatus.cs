@@ -1,4 +1,4 @@
-﻿namespace bms.Model;
+﻿namespace Bts.Model;
 
 internal class AcceptanceStatus : BaseModel
 {

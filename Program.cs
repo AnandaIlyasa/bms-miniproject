@@ -1,13 +1,12 @@
-﻿using bms.View;
+﻿namespace Bts;
 
-namespace quiz_week4_day1_batch16_anandailyasaputra
+using Bts.View;
+
+internal class Program
 {
-    internal class Program
+    static void Main()
     {
-        static void Main()
-        {
-            var authView = new AuthView(new SuperAdminView(), new CandidateView(), new HRView(), new ReviewerView());
-            authView.Login();
-        }
+        var authView = new AuthView(new SuperAdminView(), new CandidateView(), new HRView(), new ReviewerView());
+        authView.Login();
     }
 }

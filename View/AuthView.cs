@@ -1,7 +1,8 @@
-﻿using bms.Model;
+﻿using Bts.IService;
+using Bts.Model;
 using System.Runtime.ConstrainedExecution;
 
-namespace bms.View;
+namespace Bts.View;
 
 internal class AuthView
 {
@@ -119,6 +120,7 @@ internal class AuthView
         while (true)
         {
             Console.WriteLine("\n==== Bootcamp Test Management System ====");
+            Console.WriteLine("---- Login Page ----");
             Console.Write("Email : ");
             var email = Console.ReadLine();
             Console.Write("Password : ");
@@ -138,11 +140,11 @@ internal class AuthView
 
             if (role.RoleName == _roleList[0].RoleName)
             {
-                _superAdminView.MainMenu(_roleList, _userList);
+                _superAdminView.MainMenu(_roleList);
             }
             else if (role.RoleName == _roleList[1].RoleName)
             {
-                _hrView.MainMenu(_roleList[3], _userList);
+                _hrView.MainMenu(_roleList[3]);
             }
             else if (role.RoleName == _roleList[2].RoleName)
             {

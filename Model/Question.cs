@@ -1,8 +1,9 @@
-﻿namespace bms.Model;
+﻿namespace Bts.Model;
 
 internal class Question : BaseModel
 {
     public string? QuestionContent { get; init; }
     public Package Package { get; init; }
-    public File? Image { get; init; }
+    public BTSFile? Image { get; init; }
+    public List<MultipleChoiceOption> optionList { get; set; }
 }

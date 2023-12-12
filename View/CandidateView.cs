@@ -1,6 +1,7 @@
-﻿namespace bms.View;
+﻿namespace Bts.View;
 
-using bms.Utils;
+using Bts.Utils;
+using Bts.Model;
 
 internal class CandidateView
 {
@@ -8,58 +9,77 @@ internal class CandidateView
     {
         while (true)
         {
-            Console.WriteLine("\n=== Candidate Menu ===");
-            Console.WriteLine("1. Show Document List");
-            Console.WriteLine("2. Show Exam");
-            //Console.WriteLine("3. Show Exam Result");
-            Console.WriteLine("3. Logout");
-            var selectedOpt = Utils.GetNumberInputUtil(1, 3);
+            Console.WriteLine("\nYou must upload all these documents first");
+            Console.WriteLine("1. CV (not uploaded)");
+            Console.WriteLine("2. Ijazah (not uploaded)");
+            Console.WriteLine("3. Transcript (not uploaded)");
+            Console.WriteLine("4. KK (not uploaded)");
+            var selectedOpt = Utils.GetNumberInputUtil(1, 5);
 
             if (selectedOpt == 1)
             {
-                ShowDocumentList();
+                var cvFilename = Utils.GetStringInputUtil("CV file name");
+                var cvExtension = Utils.GetStringInputUtil("CV file extension");
             }
             else if (selectedOpt == 2)
             {
+                var ijazahFilename = Utils.GetStringInputUtil("Ijazah file name");
+                var ijazahExtension = Utils.GetStringInputUtil("Ijazah file extension");
+            }
+            else if (selectedOpt == 3)
+            {
+                var transcriptFilename = Utils.GetStringInputUtil("Transcript file name");
+                var transcriptExtension = Utils.GetStringInputUtil("Transcript file extension");
+            }
+            else if (selectedOpt == 4)
+            {
+                var kkFilename = Utils.GetStringInputUtil("KK file name");
+                var kkExtension = Utils.GetStringInputUtil("KK file extension");
                 ShowExam();
-            }
-            else
-            {
-                Console.WriteLine("\nYou Logged Out\n");
                 break;
-            }
-        }
-    }
-
-    void ShowDocumentList()
-    {
-        while (true)
-        {
-            Console.WriteLine("\nDocument List");
-            Console.WriteLine("1. CV (uploaded)");
-            Console.WriteLine("2. Ijazah (uploaded)");
-            Console.WriteLine("3. Transcript (uploaded)");
-            Console.WriteLine("4. KK (not uploaded)");
-            Console.WriteLine("5. Back");
-            var selectedOpt = Utils.GetNumberInputUtil(1, 5);
-
-            if (selectedOpt == 5)
-            {
-                break;
-            }
-            else
-            {
-                Console.WriteLine("Oops, this feature is under development");
             }
         }
     }
 
     void ShowExam()
     {
-        Console.WriteLine("---- Exam Java (12-12-2023 11:00 - 13:00) ----");
-        Console.WriteLine("Candidate name : Budiman");
-        Console.WriteLine("Acceptance status : (exam not yet submitted)");
+        Console.WriteLine("\n1. Start Exam JAVA-01 (Duration : 60 minutes)");
+        var selectedOpt = Utils.GetNumberInputUtil(1, 1);
 
-        Console.WriteLine("Total Essay Score : 0");
+        if (selectedOpt == 1)
+        {
+            StartExam();
+        }
+    }
+
+    void StartExam()
+    {
+        while (true)
+        {
+            Console.WriteLine("\n---- JAVA-01 (Time remaining: 54 minutes) ----");
+            Console.WriteLine("Candidate name : Budiman");
+            Console.WriteLine("1. Manakah prinsip OOP ke-1");
+            Console.WriteLine("A. Inheritance");
+            Console.WriteLine("B. Encapsulation");
+            Console.WriteLine("C. Abstraction");
+            Console.WriteLine("D. Polymorphism");
+            Console.WriteLine("2. Sebutkan prinsip OOP ke-2");
+            Console.WriteLine("3. Finish and Submit");
+            var selectedOpt = Utils.GetNumberInputUtil(1, 3, "Select question number to answer");
+
+            if (selectedOpt == 1)
+            {
+                var candidateOpt = Utils.GetStringInputUtil("Your option");
+            }
+            else if (selectedOpt == 2)
+            {
+                var candidateAnswer = Utils.GetStringInputUtil("Your answer");
+            }
+            else
+            {
+                Console.WriteLine("\nYou have finished the exam!");
+                break;
+            }
+        }
     }
 }

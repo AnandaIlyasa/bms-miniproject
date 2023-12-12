@@ -1,29 +1,38 @@
-﻿namespace bms.View;
+﻿namespace Bts.View;
 
-using bms.Model;
-using bms.Utils;
+using Bts.Model;
+using Bts.Utils;
 using System.Data;
 
-internal class HRView
+internal class HRView : BaseView
 {
-    public void MainMenu(Role candidateRole, List<User> _userList)
+    public void MainMenu(Role candidateRole)
     {
         while (true)
         {
             Console.WriteLine("\n=== Human Resource Menu ===");
             Console.WriteLine("1. Create New Candidate");
-            Console.WriteLine("2. Create New Package");
-            // 3. assign exam to candidate and reviewer
-            Console.WriteLine("3. Logout");
-            var selectedOpt = Utils.GetNumberInputUtil(1, 3);
+            Console.WriteLine("2. Show All Packages");
+            Console.WriteLine("3. Create New Exam");
+            Console.WriteLine("4. Show Exam List");
+            Console.WriteLine("5. Logout");
+            var selectedOpt = Utils.GetNumberInputUtil(1, 5);
 
             if (selectedOpt == 1)
             {
-                CreateNewCandidate(candidateRole, _userList);
+                CreateNewCandidate(candidateRole);
             }
             else if (selectedOpt == 2)
             {
-                CreateNewPackage();
+                ShowPackageList();
+            }
+            else if (selectedOpt == 3)
+            {
+                CreateNewExam();
+            }
+            else if (selectedOpt == 4)
+            {
+                ShowExamList();
             }
             else
             {
@@ -33,12 +42,34 @@ internal class HRView
         }
     }
 
-    void CreateNewCandidate(Role candidateRole, List<User> _userList)
+    void CreateNewCandidate(Role candidateRole)
     {
         var fullName = Utils.GetStringInputUtil("Full name");
         var email = Utils.GetStringInputUtil("Email");
 
-        Console.WriteLine($"\nNew {candidateRole.RoleName} for {fullName} with email {email} already created!");
+        Console.WriteLine($"\nNew {candidateRole.RoleName} {fullName} with email {email} already created!");
+    }
+
+    void ShowPackageList()
+    {
+        while (true)
+        {
+            Console.WriteLine("\nPackage List");
+            Console.WriteLine("JAVA-01 (10 questions)");
+            Console.WriteLine("\nPackage Menu :");
+            Console.WriteLine("1. Create New Package");
+            Console.WriteLine("2. Back");
+            var selectedOpt = Utils.GetNumberInputUtil(1, 2);
+
+            if (selectedOpt == 1)
+            {
+                CreateNewPackage();
+            }
+            else if (selectedOpt == 2)
+            {
+                return;
+            }
+        }
     }
 
     void CreateNewPackage()
@@ -46,5 +77,79 @@ internal class HRView
         var packageName = Utils.GetStringInputUtil("Package name");
 
         Console.WriteLine("\nPackage " + packageName + " already created!");
+    }
+
+    void CreateNewExam()
+    {
+        var candidateIndex = SelectCandidate();
+        if (candidateIndex == -1) { return; }
+
+        var reviewerIndex = SelectReviewer();
+        if (reviewerIndex == -1) { return; }
+
+        var packageIndex = SelectPackage();
+        if (packageIndex == -1) { return; }
+
+        Console.Write("Insert Login Start Date Time : ");
+        var loginStartDatetime = Console.ReadLine();
+        Console.Write("Insert Login End Date Time : ");
+        var loginEndDatetime = Console.ReadLine();
+        var duration = Utils.GetNumberInputUtil(30, 180, "Insert exam duration (in minutes)");
+
+        Console.WriteLine("\nExam successfully created!");
+    }
+
+    int SelectCandidate()
+    {
+        Console.WriteLine("\nCandidate List");
+        Console.WriteLine("1. Budiman");
+        Console.WriteLine("2. Cancel");
+        var selectedOpt = Utils.GetNumberInputUtil(1, 2, "Select Candidate");
+
+        if (selectedOpt == 1)
+        {
+            return selectedOpt - 1;
+        }
+        else
+        {
+            Console.WriteLine("Create new exam cancelled");
+            return -1;
+        }
+    }
+
+    int SelectReviewer()
+    {
+        Console.WriteLine("\nReviewer List");
+        Console.WriteLine("1. Andi");
+        Console.WriteLine("2. Cancel");
+        var selectedOpt = Utils.GetNumberInputUtil(1, 2, "Select Reviewer");
+
+        if (selectedOpt == 1)
+        {
+            return selectedOpt - 1;
+        }
+        else
+        {
+            Console.WriteLine("Create new exam cancelled");
+            return -1;
+        }
+    }
+
+    int SelectPackage()
+    {
+        Console.WriteLine("\nPackage List");
+        Console.WriteLine("1. Java OOP");
+        Console.WriteLine("2. Cancel");
+        var selectedOpt = Utils.GetNumberInputUtil(1, 2, "Select Package");
+
+        if (selectedOpt == 1)
+        {
+            return selectedOpt - 1;
+        }
+        else
+        {
+            Console.WriteLine("Create new exam cancelled");
+            return -1;
+        }
     }
 }

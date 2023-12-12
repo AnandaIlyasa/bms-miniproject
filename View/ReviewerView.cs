@@ -1,7 +1,7 @@
-﻿namespace bms.View;
+﻿namespace Bts.View;
 
-using bms.Model;
-using bms.Utils;
+using Bts.Model;
+using Bts.Utils;
 
 internal class ReviewerView
 {
@@ -11,7 +11,7 @@ internal class ReviewerView
         {
             Console.WriteLine("\n=== Reviewer Menu ===");
             Console.WriteLine("1. Assigned Package List");
-            Console.WriteLine("2. Review Exam");
+            Console.WriteLine("2. Show Exam List");
             Console.WriteLine("3. Logout");
             var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
@@ -81,42 +81,113 @@ internal class ReviewerView
             Console.WriteLine("3. Back");
             var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
-            string question;
             if (selectedOpt == 1)
             {
-                question = Utils.GetStringInputUtil("Multiple Choice Question");
-                var optionList = AddOption();
+                SelectMultipleChoiceQuestionType();
             }
             else if (selectedOpt == 2)
             {
-                question = Utils.GetStringInputUtil("Essay Question");
+                var question = Utils.GetStringInputUtil("Essay Question");
             }
             else
             {
                 break;
             }
 
-            Console.WriteLine("\nQuestion successfully added!");
+            Console.WriteLine("\nQuestions successfully added!");
         }
     }
 
-    List<MultipleChoiceOption> AddOption()
+    void SelectMultipleChoiceQuestionType()
     {
-        List<MultipleChoiceOption> multipleChoiceOptionList = new List<MultipleChoiceOption>();
-        var optionA = Utils.GetStringInputUtil("Insert option A");
-        var optionB = Utils.GetStringInputUtil("Insert option B");
-        var optionC = Utils.GetStringInputUtil("Insert option C");
-        var optionD = Utils.GetStringInputUtil("Insert option D");
+        while (true)
+        {
+            Console.WriteLine("\nSelect Multiple Choice Question Type");
+            Console.WriteLine("1. Text");
+            Console.WriteLine("2. Image");
+            Console.WriteLine("3. Back");
+            var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
-        return multipleChoiceOptionList;
+            string question;
+            if (selectedOpt == 1)
+            {
+                var noOfQuestion = Utils.GetNumberInputUtil(1, 20, "Insert how many questions to create");
+                for (int i = 0; i < noOfQuestion; i++)
+                {
+                    question = Utils.GetStringInputUtil("Multiple Choice Question");
+                    AddOption(question);
+                }
+            }
+            else if (selectedOpt == 2)
+            {
+                var questionFilename = Utils.GetStringInputUtil("Question file name");
+                var questionExtension = Utils.GetStringInputUtil("Question file extension");
+                question = questionFilename + "." + questionExtension;
+                AddOption(question);
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    void AddOption(string question)
+    {
+        var numberOfOption = Utils.GetNumberInputUtil(2, 20, "Insert how many options to create");
+
+        Console.WriteLine("Select Multiple Choice Option Type");
+        Console.WriteLine("1. Text");
+        Console.WriteLine("2. Image");
+        Console.WriteLine("3. Back");
+        var selectedOpt = Utils.GetNumberInputUtil(1, 3);
+
+        List<MultipleChoiceOption> multipleChoiceOptionList = new List<MultipleChoiceOption>();
+        if (selectedOpt == 1)
+        {
+            for (int i = 0; i < numberOfOption; i++)
+            {
+                var optionChar = Convert.ToChar(i + 65).ToString();
+                var optionContent = Utils.GetStringInputUtil("Insert option " + optionChar);
+                var option = new MultipleChoiceOption()
+                {
+                    OptionChar = optionChar,
+                    OptionText = optionContent,
+                    IsCorrect = false,
+                };
+                multipleChoiceOptionList.Add(option);
+            }
+            Console.WriteLine("\nOption list :");
+            Console.WriteLine("1. A) Inheritance");
+            Console.WriteLine("2. B) Encapsulation");
+            var correctOptionId = Utils.GetNumberInputUtil(1, 2, "Select the correct option");
+        }
+        else if (selectedOpt == 2)
+        {
+            for (int i = 0; i < numberOfOption; i++)
+            {
+                var optionChar = Convert.ToChar(i + 65);
+                var optionFilename = Utils.GetStringInputUtil("Insert option " + optionChar + " file name");
+                var optionExtension = Utils.GetStringInputUtil("Insert option " + optionChar + " file extension");
+                var optionContent = optionFilename + "." + optionExtension;
+            }
+            Console.WriteLine("\nOption list :");
+            Console.WriteLine("1. A) Inheritance");
+            Console.WriteLine("2. B) Encapsulation");
+            var correctOptionId = Utils.GetNumberInputUtil(1, 2, "Select the correct option");
+        }
+        else
+        {
+            return;
+        }
     }
 
     void ShowExamList()
     {
         while (true)
         {
-            Console.WriteLine("\nYour Exam List");
-            Console.WriteLine("1. Exam Java (12-12-2023 11:00 - 13:00) Candidate Name : Budiman");
+            Console.WriteLine("\nExam List");
+            Console.WriteLine("1. JAVA-01 | Submitted | Needs review | Candidate Name : Budiman | 12-12-2023 11:00 - 13:00");
             Console.WriteLine("2. Back");
             var selectedOpt = Utils.GetNumberInputUtil(1, 2);
 
@@ -135,38 +206,36 @@ internal class ReviewerView
     {
         while (true)
         {
-            Console.WriteLine("---- Exam Java (12-12-2023 11:00 - 13:00) ----");
+            Console.WriteLine("\n---- JAVA-01 (12-12-2023 11:00 - 13:00) ----");
             Console.WriteLine("Candidate name : Budiman");
+            Console.WriteLine("Submission status : Submitted");
+            Console.WriteLine("Acceptance status : Needs review");
             Console.WriteLine("Multiple choice score : 70 / 100\n");
             Console.WriteLine("Essay answers : ");
             Console.WriteLine("1. Sebutkan prinsip OOP ke-1");
             Console.WriteLine("Jawaban : Inheritance");
-            Console.WriteLine("Score : 0");
-            Console.WriteLine("Notes : ");
             Console.WriteLine("2. Sebutkan prinsip OOP ke-2");
             Console.WriteLine("Jawaban : Encapsulation");
-            Console.WriteLine("Score : 0");
-            Console.WriteLine("Notes : ");
             Console.WriteLine("3. Sebutkan prinsip OOP ke-3");
             Console.WriteLine("Jawaban : Abstraction");
-            Console.WriteLine("Score : 0");
-            Console.WriteLine("Notes : ");
             Console.WriteLine("4. Sebutkan prinsip OOP ke-4");
             Console.WriteLine("Jawaban : Polymorphism");
-            Console.WriteLine("Score : 0");
-            Console.WriteLine("Notes : ");
-            Console.WriteLine("Total Essay Score : 0");
-            Console.WriteLine("5. Back");
-            var selectedEssay = Utils.GetNumberInputUtil(1, 5, "Select Essay Number");
 
-            if (selectedEssay == 5)
+            Console.WriteLine("\nSelect Option");
+            Console.WriteLine("1. Insert Score and Notes");
+            Console.WriteLine("2. Back");
+            var selectedEssay = Utils.GetNumberInputUtil(1, 2);
+
+            if (selectedEssay == 1)
             {
-                break;
+                Console.Write("Score : ");
+                var score = (float)Convert.ToDouble(Console.ReadLine());
+                var notes = Utils.GetStringInputUtil("Insert Notes");
+                Console.WriteLine("score : " + score);
             }
             else
             {
-                var score = Utils.GetNumberInputUtil(0, 100, "Insert Score");
-                var notes = Utils.GetStringInputUtil("Insert Notes");
+                break;
             }
         }
     }

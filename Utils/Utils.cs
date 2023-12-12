@@ -1,4 +1,4 @@
-﻿namespace bms.Utils;
+﻿namespace Bts.Utils;
 
 static class Utils
 {

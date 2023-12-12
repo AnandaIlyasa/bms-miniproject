@@ -1,22 +1,27 @@
-﻿namespace bms.View;
+﻿namespace Bts.View;
 
-using bms.Utils;
-using bms.Model;
+using Bts.Utils;
+using Bts.Model;
 
-internal class SuperAdminView
+internal class SuperAdminView : BaseView
 {
-    public void MainMenu(List<Role> _roleList, List<User> _userList)
+    public void MainMenu(List<Role> _roleList)
     {
         while (true)
         {
             Console.WriteLine("\n=== Super Admin Menu ===");
             Console.WriteLine("1. Create New User");
-            Console.WriteLine("2. Logout");
-            var selectedOpt = Utils.GetNumberInputUtil(1, 2);
+            Console.WriteLine("2. Show Exam List");
+            Console.WriteLine("3. Logout");
+            var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
             if (selectedOpt == 1)
             {
-                CreateNewUser(_roleList, _userList);
+                CreateNewUser(_roleList);
+            }
+            else if (selectedOpt == 2)
+            {
+                ShowExamList();
             }
             else
             {
@@ -26,7 +31,7 @@ internal class SuperAdminView
         }
     }
 
-    void CreateNewUser(List<Role> _roleList, List<User> _userList)
+    void CreateNewUser(List<Role> _roleList)
     {
         Console.WriteLine("\nSelect Role");
         Console.WriteLine("1. Human Resource");
