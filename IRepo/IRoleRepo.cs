@@ -4,5 +4,6 @@ namespace Bts.IRepo;
 
 internal interface IRoleRepo
 {
-    List<Role> GetAllRoleExcludingSuperadminAndCandidate();
+    List<Role> GetRoleListExcludingSuperadminAndCandidate();
+    Role GetCandidateRole();
 }

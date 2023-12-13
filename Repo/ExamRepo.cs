@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 internal class ExamRepo : IExamRepo
 {
-    DatabaseHelper _dbHelper;
+    readonly DatabaseHelper _dbHelper;
 
     public ExamRepo(DatabaseHelper dbHelper)
     {

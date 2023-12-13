@@ -3,12 +3,23 @@
 using Bts.Constant;
 using Bts.Model;
 using Bts.Utils;
-using System.Data;
+using Bts.IService;
 
 internal class HRView
 {
-    public void MainMenu()
+    readonly IUserService _userService;
+    readonly IPackageService _packageService;
+    User _hrUser;
+
+    public HRView(IUserService userService, IPackageService packageService)
     {
+        _userService = userService;
+        _packageService = packageService;
+    }
+
+    public void MainMenu(User user)
+    {
+        _hrUser = user;
         while (true)
         {
             Console.WriteLine("\n=== Human Resource Menu ===");
@@ -45,10 +56,23 @@ internal class HRView
 
     void CreateNewCandidate()
     {
+        var candidateRole = _userService.GetCandidateRole();
         var fullName = Utils.GetStringInputUtil("Full name");
         var email = Utils.GetStringInputUtil("Email");
+        var newCandidate = new User()
+        {
+            FullName = fullName,
+            Email = email,
+            Pass = Utils.GenerateRandomAlphaNumericUtil(),
+            Role = new Role() { Id = candidateRole.Id, },
+            CreatedBy = _hrUser.Id,
+            CreatedAt = DateTime.Now,
+            Ver = 0,
+            IsActive = true,
+        };
+        _userService.CreateUser(newCandidate);
 
-        Console.WriteLine($"\nNew {RoleCode.Candidate} {fullName} with email {email} already created!");
+        Console.WriteLine($"\nNew {candidateRole.RoleName} {fullName} with email {email} already created!");
     }
 
     void ShowPackageList()
@@ -56,7 +80,14 @@ internal class HRView
         while (true)
         {
             Console.WriteLine("\nPackage List");
-            Console.WriteLine("JAVA-01 (10 questions)");
+
+            var packageList = _packageService.GetPackageList();
+            var number = 1;
+            foreach (var package in packageList)
+            {
+                Console.WriteLine($"{number}. {package.PackageCode} - {package.PackageName}");
+                number++;
+            }
             Console.WriteLine("\nPackage Menu :");
             Console.WriteLine("1. Create New Package");
             Console.WriteLine("2. Back");
@@ -76,8 +107,18 @@ internal class HRView
     void CreateNewPackage()
     {
         var packageName = Utils.GetStringInputUtil("Package name");
+        var newPackage = new Package()
+        {
+            PackageName = packageName,
+            PackageCode = Utils.GenerateRandomAlphaNumericUtil(),
+            CreatedBy = _hrUser.Id,
+            CreatedAt = DateTime.Now,
+            Ver = 0,
+            IsActive = true,
+        };
+        _packageService.CreatePackage(newPackage);
 
-        Console.WriteLine("\nPackage " + packageName + " already created!");
+        Console.WriteLine("\nPackage " + packageName + " successfully created!");
     }
 
     void CreateNewExam()

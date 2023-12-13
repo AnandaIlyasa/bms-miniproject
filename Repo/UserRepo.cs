@@ -7,37 +7,38 @@ namespace Bts.Repo;
 
 internal class UserRepo : IUserRepo
 {
-    DatabaseHelper _dbHelper;
+    readonly DatabaseHelper _dbHelper;
 
     public UserRepo(DatabaseHelper dbHelper)
     {
         _dbHelper = dbHelper;
     }
 
-    public User CreateNewUser(User newUser)
+    public User CreateNewUser(User user)
     {
-        const string sql = "INSERT INTO " +
+        const string sqlQuery = "INSERT INTO " +
             "t_m_user(full_name, email, pass, role_id, created_by, created_at, ver, is_active) VALUES " +
             "(@full_name, @email, @pass, @role_id, @created_by, @created_at, @ver, @is_active) " +
             "SELECT @@identity";
 
         var conn = _dbHelper.GetConnection();
         var sqlCommand = conn.CreateCommand();
-        sqlCommand.CommandText = sql;
-        sqlCommand.Parameters.AddWithValue("@full_name", newUser.FullName);
-        sqlCommand.Parameters.AddWithValue("@email", newUser.Email);
-        sqlCommand.Parameters.AddWithValue("@pass", newUser.Pass);
-        sqlCommand.Parameters.AddWithValue("@role_id", newUser.Role.Id);
-        sqlCommand.Parameters.AddWithValue("@created_by", newUser.CreatedBy);
-        sqlCommand.Parameters.AddWithValue("@created_at", DateTime.Now);
-        sqlCommand.Parameters.AddWithValue("@ver", 0);
-        sqlCommand.Parameters.AddWithValue("@is_active", 1);
+        sqlCommand.CommandText = sqlQuery;
+        sqlCommand.Parameters.AddWithValue("@full_name", user.FullName);
+        sqlCommand.Parameters.AddWithValue("@email", user.Email);
+        sqlCommand.Parameters.AddWithValue("@pass", user.Pass);
+        sqlCommand.Parameters.AddWithValue("@role_id", user.Role.Id);
+        sqlCommand.Parameters.AddWithValue("@created_by", user.CreatedBy);
+        sqlCommand.Parameters.AddWithValue("@created_at", user.CreatedAt);
+        sqlCommand.Parameters.AddWithValue("@ver", user.Ver);
+        sqlCommand.Parameters.AddWithValue("@is_active", user.IsActive);
+
         conn.Open();
         var newUserId = (int)(decimal)sqlCommand.ExecuteScalar();
         conn.Close();
 
-        newUser.Id = newUserId;
-        return newUser;
+        user.Id = newUserId;
+        return user;
     }
 
     public User? GetUserByEmailAndPassword(string email, string password)

@@ -9,14 +9,14 @@ using System.Data.SqlClient;
 
 internal class RoleRepo : IRoleRepo
 {
-    DatabaseHelper _dbHelper;
+    readonly DatabaseHelper _dbHelper;
 
     public RoleRepo(DatabaseHelper dbHelper)
     {
         _dbHelper = dbHelper;
     }
 
-    public List<Role> GetAllRoleExcludingSuperadminAndCandidate()
+    public List<Role> GetRoleListExcludingSuperadminAndCandidate()
     {
         const string sqlQuery = "SELECT * FROM t_m_role WHERE role_code != @sa_code AND role_code != @can_code";
 
@@ -43,5 +43,29 @@ internal class RoleRepo : IRoleRepo
         conn.Close();
 
         return roleList;
+    }
+
+    public Role GetCandidateRole()
+    {
+        const string sqlQuery = "SELECT * FROM t_m_role WHERE role_code = @can_code";
+
+        var conn = _dbHelper.GetConnection();
+        conn.Open();
+
+        var sqlCommand = conn.CreateCommand();
+        sqlCommand.CommandText = sqlQuery;
+        sqlCommand.Parameters.AddWithValue("@can_code", RoleCode.Candidate);
+        var reader = sqlCommand.ExecuteReader();
+        var role = new Role();
+        if (reader.Read())
+        {
+            role.Id = (int)reader["id"];
+            role.RoleCode = (string)reader["role_code"];
+            role.RoleName = (string)reader["role_name"];
+        }
+
+        conn.Close();
+
+        return role;
     }
 }

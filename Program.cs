@@ -15,12 +15,14 @@ internal class Program
         var userRepo = new UserRepo(dbHelper);
         var roleRepo = new RoleRepo(dbHelper);
         var examRepo = new ExamRepo(dbHelper);
+        var packageRepo = new PackageRepo(dbHelper);
 
         var userService = new UserService(userRepo, roleRepo);
         var examService = new ExamService(examRepo);
+        var packageService = new PackageService(packageRepo);
 
         var superadminView = new SuperAdminView(userService, examService);
-        var hrView = new HRView();
+        var hrView = new HRView(userService, packageService);
         var reviewerView = new ReviewerView();
         var candidateView = new CandidateView();
         var authView = new AuthView(userService, superadminView, hrView, reviewerView, candidateView);

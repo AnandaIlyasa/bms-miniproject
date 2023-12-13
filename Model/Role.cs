@@ -2,6 +2,6 @@
 
 internal class Role : BaseModel
 {
-    public string RoleCode { get; init; }
-    public string RoleName { get; init; }
+    public string RoleCode { get; set; }
+    public string RoleName { get; set; }
 }

@@ -53,7 +53,7 @@ internal class AuthView
             }
             else if (user.Role.RoleCode == RoleCode.HumanResource)
             {
-                _hrView.MainMenu();
+                _hrView.MainMenu(user);
             }
             else if (user.Role.RoleCode == RoleCode.Reviewer)
             {

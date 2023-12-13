@@ -22,10 +22,16 @@ internal class UserService : IUserService
         return newUser;
     }
 
-    public List<Role> GetRoleList()
+    public List<Role> GetAllRoleExcludingSuperadminAndCandidate()
     {
-        var roleList = _roleRepo.GetAllRoleExcludingSuperadminAndCandidate();
+        var roleList = _roleRepo.GetRoleListExcludingSuperadminAndCandidate();
         return roleList;
+    }
+
+    public Role GetCandidateRole()
+    {
+        var candidateRole = _roleRepo.GetCandidateRole();
+        return candidateRole;
     }
 
     public List<User> GetUserListByRole(string roleCode)

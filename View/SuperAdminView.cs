@@ -50,7 +50,7 @@ internal class SuperAdminView
     void CreateNewUser()
     {
         Console.WriteLine("\nSelect Role");
-        var roleList = _userService.GetRoleList();
+        var roleList = _userService.GetAllRoleExcludingSuperadminAndCandidate();
         var number = 1;
         foreach (var role in roleList)
         {
@@ -74,11 +74,11 @@ internal class SuperAdminView
             FullName = fullName,
             Email = email,
             Pass = Utils.GenerateRandomAlphaNumericUtil(),
-            Role = new Role()
-            {
-                Id = roleId,
-            },
+            Role = new Role() { Id = roleId, },
             CreatedBy = _superadminUser.Id,
+            CreatedAt = DateTime.Now,
+            Ver = 0,
+            IsActive = true,
         };
 
         _userService.CreateUser(newUser);
@@ -135,8 +135,7 @@ internal class SuperAdminView
         Console.WriteLine("\nCandidate's exam answers:");
         var number = 1;
         var groupedAnswerList = exam.CandidateAnswerList
-            .GroupBy(answer => answer.ChoiceOption?.OptionChar)
-            .SelectMany(group => group)
+            .OrderByDescending(answer => answer.ChoiceOption?.OptionChar)
             .ToList();
         foreach (var answer in groupedAnswerList)
         {
