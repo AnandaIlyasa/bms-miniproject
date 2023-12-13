@@ -1,12 +1,13 @@
 ﻿namespace Bts.View;
 
+using Bts.Constant;
 using Bts.Model;
 using Bts.Utils;
 using System.Data;
 
-internal class HRView : BaseView
+internal class HRView
 {
-    public void MainMenu(Role candidateRole)
+    public void MainMenu()
     {
         while (true)
         {
@@ -20,7 +21,7 @@ internal class HRView : BaseView
 
             if (selectedOpt == 1)
             {
-                CreateNewCandidate(candidateRole);
+                CreateNewCandidate();
             }
             else if (selectedOpt == 2)
             {
@@ -32,7 +33,7 @@ internal class HRView : BaseView
             }
             else if (selectedOpt == 4)
             {
-                ShowExamList();
+                //ShowExamList(new List<Exam>());
             }
             else
             {
@@ -42,12 +43,12 @@ internal class HRView : BaseView
         }
     }
 
-    void CreateNewCandidate(Role candidateRole)
+    void CreateNewCandidate()
     {
         var fullName = Utils.GetStringInputUtil("Full name");
         var email = Utils.GetStringInputUtil("Email");
 
-        Console.WriteLine($"\nNew {candidateRole.RoleName} {fullName} with email {email} already created!");
+        Console.WriteLine($"\nNew {RoleCode.Candidate} {fullName} with email {email} already created!");
     }
 
     void ShowPackageList()

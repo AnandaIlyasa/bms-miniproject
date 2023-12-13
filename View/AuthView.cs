@@ -1,5 +1,7 @@
-﻿using Bts.IService;
+﻿using Bts.Constant;
+using Bts.IService;
 using Bts.Model;
+using Bts.Service;
 using System.Runtime.ConstrainedExecution;
 
 namespace Bts.View;
@@ -11,104 +13,11 @@ internal class AuthView
     ReviewerView _reviewerView;
     SuperAdminView _superAdminView;
 
-    static readonly List<Role> _roleList = new List<Role>()
-    {
-        new Role()
-        {
-            Id = 1,
-            CreatedBy = 1,
-            CreatedAt = DateTime.Now,
-            Ver = 1,
-            IsActive = true,
-            RoleCode = "SA",
-            RoleName = "Super Admin"
-        },
-        new Role()
-        {
-            Id = 2,
-            CreatedBy = 1,
-            CreatedAt = DateTime.Now,
-            Ver = 1,
-            IsActive = true,
-            RoleCode = "HR",
-            RoleName = "Human Resource"
-        },
-        new Role()
-        {
-            Id = 3,
-            CreatedBy = 1,
-            CreatedAt = DateTime.Now,
-            Ver = 1,
-            IsActive = true,
-            RoleCode = "REV",
-            RoleName = "Reviewer"
-        },
-        new Role()
-        {
-            Id = 4,
-            CreatedBy = 1,
-            CreatedAt = DateTime.Now,
-            Ver = 1,
-            IsActive = true,
-            RoleCode = "CNDT",
-            RoleName = "Candidate"
-        }
-    };
+    IUserService _userService;
 
-    List<User> _userList = new List<User>()
+    public AuthView(IUserService userService, SuperAdminView superadminView, HRView hrView, ReviewerView reviewerView, CandidateView candidateView)
     {
-        new User()
-        {
-            Id = 1,
-            CreatedBy = 1,
-            CreatedAt = DateTime.Now,
-            Ver = 1,
-            IsActive = true,
-            FullName = "Super Admin",
-            Email = "sa@gmail.com",
-            Pass = "sa",
-            Role = AuthView._roleList[0]
-        },
-        new User()
-        {
-            Id = 1,
-            CreatedBy = 1,
-            CreatedAt = DateTime.Now,
-            Ver = 1,
-            IsActive = true,
-            FullName = "Human Resource",
-            Email = "hr@gmail.com",
-            Pass = "hr",
-            Role = AuthView._roleList[1]
-        },
-        new User()
-        {
-            Id = 1,
-            CreatedBy = 1,
-            CreatedAt = DateTime.Now,
-            Ver = 1,
-            IsActive = true,
-            FullName = "Reviewer",
-            Email = "rev@gmail.com",
-            Pass = "rev",
-            Role = AuthView._roleList[2]
-        },
-        new User()
-        {
-            Id = 1,
-            CreatedBy = 1,
-            CreatedAt = DateTime.Now,
-            Ver = 1,
-            IsActive = true,
-            FullName = "Candidate",
-            Email = "can@gmail.com",
-            Pass = "can",
-            Role = AuthView._roleList[3]
-        }
-    };
-
-    public AuthView(SuperAdminView superadminView, CandidateView candidateView, HRView hrView, ReviewerView reviewerView)
-    {
+        _userService = userService;
         _superAdminView = superadminView;
         _candidateView = candidateView;
         _hrView = hrView;
@@ -126,8 +35,8 @@ internal class AuthView
             Console.Write("Password : ");
             var password = Console.ReadLine();
 
-            var (loginSuccess, role) = CheckCredential(email, password);
-            while (loginSuccess == false)
+            var user = _userService.Login(email, password);
+            while (user == null)
             {
                 Console.WriteLine("\nCredential is wrong!\n");
 
@@ -135,38 +44,38 @@ internal class AuthView
                 email = Console.ReadLine();
                 Console.Write("Password : ");
                 password = Console.ReadLine();
-                (loginSuccess, role) = CheckCredential(email, password);
+                user = _userService.Login(email, password);
             }
 
-            if (role.RoleName == _roleList[0].RoleName)
+            if (user.Role.RoleCode == RoleCode.SuperAdmin)
             {
-                _superAdminView.MainMenu(_roleList);
+                _superAdminView.MainMenu(user);
             }
-            else if (role.RoleName == _roleList[1].RoleName)
+            else if (user.Role.RoleCode == RoleCode.HumanResource)
             {
-                _hrView.MainMenu(_roleList[3]);
+                _hrView.MainMenu();
             }
-            else if (role.RoleName == _roleList[2].RoleName)
+            else if (user.Role.RoleCode == RoleCode.Reviewer)
             {
                 _reviewerView.MainMenu();
             }
-            else if (role.RoleName == _roleList[3].RoleName)
+            else if (user.Role.RoleCode == RoleCode.Candidate)
             {
                 _candidateView.MainMenu();
             }
         }
     }
 
-    (bool, Role?) CheckCredential(string email, string password)
-    {
-        foreach (var user in _userList)
-        {
-            if (user.Email == email && user.Pass == password)
-            {
-                return (true, user.Role);
-            }
-        }
+    //(bool, Role?) CheckCredential(string email, string password)
+    //{
+    //    foreach (var user in _userList)
+    //    {
+    //        if (user.Email == email && user.Pass == password)
+    //        {
+    //            return (true, user.Role);
+    //        }
+    //    }
 
-        return (false, null);
-    }
+    //    return (false, null);
+    //}
 }

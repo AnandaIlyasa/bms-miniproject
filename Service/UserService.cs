@@ -1,13 +1,31 @@
 ﻿using Bts.IService;
 using Bts.Model;
+using Bts.IRepo;
+using Bts.Repo;
 
 namespace Bts.Service;
 
 internal class UserService : IUserService
 {
+    IUserRepo _userRepo;
+    IRoleRepo _roleRepo;
+
+    public UserService(IUserRepo userRepo, IRoleRepo roleRepo)
+    {
+        _userRepo = userRepo;
+        _roleRepo = roleRepo;
+    }
+
     public User CreateUser(User user)
     {
-        return new User();
+        var newUser = _userRepo.CreateNewUser(user);
+        return newUser;
+    }
+
+    public List<Role> GetRoleList()
+    {
+        var roleList = _roleRepo.GetAllRoleExcludingSuperadminAndCandidate();
+        return roleList;
     }
 
     public List<User> GetUserListByRole(string roleCode)
@@ -17,6 +35,7 @@ internal class UserService : IUserService
 
     public User? Login(string email, string password)
     {
-        return new User();
+        User? user = _userRepo.GetUserByEmailAndPassword(email, password);
+        return user;
     }
 }
