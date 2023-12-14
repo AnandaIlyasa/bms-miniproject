@@ -21,17 +21,18 @@ internal class Program
         var optionRepo = new MultipleChoiceOptionRepo(dbHelper);
         var documentTypeRepo = new DocumentTypeRepo(dbHelper);
         var candidateDocumentRepo = new CandidateDocumentRepo(dbHelper);
+        var candidateAnswerRepo = new CandidateAnswerRepo(dbHelper);
 
         var userService = new UserService(userRepo, roleRepo);
-        var examService = new ExamService(examRepo, examPackageRepo);
+        var examService = new ExamService(examRepo, examPackageRepo, candidateAnswerRepo);
         var packageService = new PackageService(packageRepo);
         var questionService = new QuestionService(questionRepo, fileRepo, optionRepo);
         var documentService = new DocumentService(documentTypeRepo, fileRepo, candidateDocumentRepo);
 
         var superadminView = new SuperAdminView(userService, examService);
         var hrView = new HRView(userService, packageService, examService);
-        var reviewerView = new ReviewerView(packageService, questionService);
-        var candidateView = new CandidateView(documentService);
+        var reviewerView = new ReviewerView(packageService, questionService, examService);
+        var candidateView = new CandidateView(documentService, examService);
         var authView = new AuthView(userService, superadminView, hrView, reviewerView, candidateView);
 
         authView.Login();

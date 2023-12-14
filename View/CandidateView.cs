@@ -7,16 +7,26 @@ using Bts.IService;
 internal class CandidateView
 {
     readonly IDocumentService _documentService;
+    readonly IExamService _examService;
     User _candidateUser;
 
-    public CandidateView(IDocumentService documentService)
+    public CandidateView(IDocumentService documentService, IExamService examService)
     {
         _documentService = documentService;
+        _examService = examService;
     }
 
     public void MainMenu(User user)
     {
         _candidateUser = user;
+
+        var exam = _examService.GetExamByCandidate(_candidateUser.Id);
+        if (exam == null)
+        {
+            Console.WriteLine("\nYou have no active exam, check your email for exam schedule or contact the HR!");
+            return;
+        }
+
         var candidateDocumentList = _documentService.GetCandidateDocumentList(user.Id);
         var documentTypeList = _documentService.GetDocumentTypeList();
         var allDocumentIsUploaded = true;
@@ -31,7 +41,7 @@ internal class CandidateView
 
         if (allDocumentIsUploaded)
         {
-            StartExam();
+            StartExam(exam);
             return;
         }
 
@@ -44,7 +54,7 @@ internal class CandidateView
             {
                 _documentService.UploadCandidateDocument(candidateDocumentList);
                 Console.WriteLine("\nAll documents successfully uploaded!");
-                StartExam();
+                StartExam(exam);
                 break;
             }
 
@@ -83,36 +93,135 @@ internal class CandidateView
         }
     }
 
-    void StartExam()
+    void StartExam(Exam exam)
     {
         Console.WriteLine("\nPlease be ready before starting the exam!");
-        Console.WriteLine("1. Start Exam");
+        Console.WriteLine("1. Start Exam - " + exam.ExamPackage.Package.PackageName);
         Utils.GetNumberInputUtil(1, 1, "Start");
+
+        var examStartTime = DateTime.Now;
+        var examEndTime = examStartTime.AddMinutes(exam.ExamPackage.Duration);
+        var answerList = new List<CandidateAnswer>();
         while (true)
         {
-            Console.WriteLine("\n---- JAVA-01 (Time remaining: 54 minutes) ----");
-            Console.WriteLine("Candidate name : Budiman");
-            Console.WriteLine("1. Manakah prinsip OOP ke-1");
-            Console.WriteLine("A. Inheritance");
-            Console.WriteLine("B. Encapsulation");
-            Console.WriteLine("C. Abstraction");
-            Console.WriteLine("D. Polymorphism");
-            Console.WriteLine("2. Sebutkan prinsip OOP ke-2");
-            Console.WriteLine("3. Finish and Submit");
-            var selectedOpt = Utils.GetNumberInputUtil(1, 3, "Select question number to answer");
+            var timeRemaining = examEndTime - DateTime.Now;
+            Console.WriteLine($"\n---- {exam.ExamPackage.Package.PackageName} (Time remaining: {timeRemaining.Minutes} minutes) ----");
+            Console.WriteLine("Candidate: " + exam.Candidate.FullName + "\n");
 
-            if (selectedOpt == 1)
+            var groupedQuestionList = exam.QuestionList
+                                    .OrderBy(question => question.OptionList == null)
+                                    .ToList();
+            var number = 1;
+            foreach (var question in groupedQuestionList)
             {
-                var candidateOpt = Utils.GetStringInputUtil("Your option");
+                var questionImage = question.Image;
+                var questionText = question.QuestionContent;
+                var questionString = questionImage?.FileContent == null ? questionText : questionImage?.FileContent + "." + questionImage?.FileExtension;
+                var questionAnswer = answerList.Find(ans => ans.Question.Id == question.Id);
+                if (questionAnswer != null)
+                {
+                    var answer = questionAnswer.AnswerContent == null ? questionAnswer.ChoiceOption?.OptionChar : questionAnswer.AnswerContent;
+                    Console.WriteLine($"{number}. {questionString} (Your answer: {answer})");
+                }
+                else
+                {
+                    Console.WriteLine($"{number}. {questionString}");
+                }
+
+                var optionList = question.OptionList;
+                if (optionList == null || optionList.Count == 0)
+                {
+                    number++;
+                    continue;
+                }
+                else
+                {
+                    foreach (var option in optionList)
+                    {
+                        var optChar = option.OptionChar;
+                        var optText = option.OptionText;
+                        var optImage = option.OptionImage;
+                        var optString = optImage?.FileContent == null ? optText : optImage?.FileContent + "." + optImage?.FileExtension;
+                        Console.WriteLine($"   {optChar}) {optString}");
+                    }
+                }
+                number++;
             }
-            else if (selectedOpt == 2)
+            Console.WriteLine(number + ". Finish and Submit");
+            var selectedOpt = Utils.GetNumberInputUtil(1, number, "Select question number to answer");
+
+            if (selectedOpt == number)
             {
-                var candidateAnswer = Utils.GetStringInputUtil("Your answer");
+                Console.WriteLine("\nYou have finished the exam!");
+                exam.ExamPackage.ExamStartDateTime = examStartTime;
+                exam.ExamPackage.IsSubmitted = true;
+                exam.ExamPackage.Exam = new Exam() { Id = exam.Id };
+                _examService.SubmitExam(answerList, exam.ExamPackage);
+                break;
             }
             else
             {
-                Console.WriteLine("\nYou have finished the exam!");
-                break;
+                var selectedQuestion = groupedQuestionList[selectedOpt - 1];
+                var existingAnswer = answerList.Find(ans => ans.Question.Id == selectedQuestion.Id);
+                if (selectedQuestion.OptionList == null || selectedQuestion.OptionList.Count == 0)
+                {
+                    var candidateAnswer = Utils.GetStringInputUtil("Your answer");
+                    if (existingAnswer == null)
+                    {
+                        var answer = new CandidateAnswer()
+                        {
+                            Question = new Question() { Id = selectedQuestion.Id },
+                            ExamPackage = new ExamPackage() { Id = exam.ExamPackage.Id },
+                            AnswerContent = candidateAnswer,
+                            CreatedBy = _candidateUser.Id,
+                            CreatedAt = DateTime.Now,
+                            Ver = 0,
+                            IsActive = true,
+                        };
+                        answerList.Add(answer);
+                    }
+                    else
+                    {
+                        existingAnswer.AnswerContent = candidateAnswer;
+                    }
+                }
+                else
+                {
+                    var questionString = selectedQuestion.QuestionContent == null ? selectedQuestion.Image?.FileContent + "." + selectedQuestion.Image?.FileExtension : selectedQuestion.QuestionContent;
+                    Console.WriteLine("\n" + questionString);
+                    var no = 1;
+                    foreach (var option in selectedQuestion.OptionList)
+                    {
+                        var optChar = option.OptionChar;
+                        var optText = option.OptionText;
+                        var optImage = option.OptionImage;
+                        var optString = optImage?.FileContent == null ? optText : optImage?.FileContent + "." + optImage?.FileExtension;
+                        Console.WriteLine($"{no}. {optChar}) {optString}");
+                        no++;
+                    }
+                    var selectedOptionNo = Utils.GetNumberInputUtil(1, no - 1, "Select your answer");
+
+                    var selectedOption = selectedQuestion.OptionList[selectedOptionNo - 1];
+
+                    if (existingAnswer == null)
+                    {
+                        var answer = new CandidateAnswer()
+                        {
+                            Question = new Question() { Id = selectedQuestion.Id },
+                            ExamPackage = new ExamPackage() { Id = exam.ExamPackage.Id },
+                            ChoiceOption = selectedOption,
+                            CreatedBy = _candidateUser.Id,
+                            CreatedAt = DateTime.Now,
+                            Ver = 0,
+                            IsActive = true,
+                        };
+                        answerList.Add(answer);
+                    }
+                    else
+                    {
+                        existingAnswer.ChoiceOption = selectedOption;
+                    }
+                }
             }
         }
     }

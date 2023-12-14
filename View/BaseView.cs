@@ -17,7 +17,7 @@ abstract class BaseView
             foreach (var exam in examList)
             {
                 var candidateName = exam.Candidate.FullName;
-                var packageName = exam.Package.PackageName;
+                var packageName = exam.ExamPackage.Package.PackageName;
                 var createdAt = exam.CreatedAt.ToString(ISODateTimeFormat);
                 var acceptanceStatus = exam.AcceptanceStatus!.StatusName == "" ? "None" : exam.AcceptanceStatus.StatusName;
                 var submissionStatus = exam.ExamPackage.IsSubmitted == null ? "Not Attempted" : (bool)exam.ExamPackage.IsSubmitted ? "Submitted" : "On Progress";
@@ -41,7 +41,7 @@ abstract class BaseView
     public void ShowExamDetail(int examId, IExamService examService)
     {
         var exam = examService.GetExamById(examId);
-        var packageName = "java";
+        var packageName = exam.ExamPackage.Package.PackageName;
         var examStartDateTime = exam?.ExamPackage.ExamStartDateTime == null ? "Not Attempted" : exam.ExamPackage.ExamStartDateTime?.ToString(ISODateTimeFormat);
         var submissionStatus = exam?.ExamPackage.IsSubmitted == null ? "Not Attempted" : (bool)exam.ExamPackage.IsSubmitted ? "Submitted" : "On Progress";
         var acceptanceStatus = exam?.AcceptanceStatus!.StatusName == "" ? "None" : exam.AcceptanceStatus.StatusName;
@@ -55,8 +55,8 @@ abstract class BaseView
         Console.WriteLine("\nCandidate's exam answers:");
         var number = 1;
         var groupedAnswerList = exam.CandidateAnswerList
-            .OrderByDescending(answer => answer.ChoiceOption?.OptionChar)
-            .ToList();
+                                .OrderByDescending(answer => answer.ChoiceOption?.OptionChar)
+                                .ToList();
         foreach (var answer in groupedAnswerList)
         {
             var question = answer.Question.QuestionContent == null ? answer.Question.Image?.FileContent + "." + answer.Question.Image?.FileExtension : answer.Question.QuestionContent;
@@ -67,14 +67,14 @@ abstract class BaseView
             }
             else
             {
-                candidateAnswer = "(" + answer.ChoiceOption!.OptionChar + ") ";
-                if (answer.ChoiceOption.OptionText != null && answer.ChoiceOption.OptionText != "")
+                candidateAnswer = "(" + answer.ChoiceOption?.OptionChar + ") ";
+                if (answer.ChoiceOption?.OptionText != null && answer.ChoiceOption.OptionText != "")
                 {
                     candidateAnswer += answer.ChoiceOption.OptionText;
                 }
                 else
                 {
-                    candidateAnswer += answer.ChoiceOption.OptionImage?.FileContent + answer.ChoiceOption.OptionImage?.FileExtension;
+                    candidateAnswer += answer.ChoiceOption?.OptionImage?.FileContent + "." + answer.ChoiceOption?.OptionImage?.FileExtension;
                 }
 
             }

@@ -65,17 +65,4 @@ internal class AuthView
             }
         }
     }
-
-    //(bool, Role?) CheckCredential(string email, string password)
-    //{
-    //    foreach (var user in _userList)
-    //    {
-    //        if (user.Email == email && user.Pass == password)
-    //        {
-    //            return (true, user.Role);
-    //        }
-    //    }
-
-    //    return (false, null);
-    //}
 }

@@ -2,9 +2,7 @@
 
 using Bts.Utils;
 using Bts.Model;
-using Bts.Constant;
 using Bts.IService;
-using Bts.Service;
 
 internal class SuperAdminView : BaseView
 {
@@ -82,6 +80,6 @@ internal class SuperAdminView : BaseView
         _userService.CreateUser(newUser);
 
         var createdRoleName = roleList.Find(role => role.Id == roleId)!.RoleName;
-        Console.WriteLine($"\nNew {createdRoleName} for {fullName} with email {email} already created!");
+        Console.WriteLine($"\nNew {createdRoleName} for {fullName} with email {email} successfully created!");
     }
 }

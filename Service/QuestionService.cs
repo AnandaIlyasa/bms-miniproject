@@ -28,18 +28,21 @@ internal class QuestionService : IQuestionService
             }
             var insertedQuestion = _questionRepo.CreateNewQuestion(question);
 
-            foreach (var option in question.OptionList)
+            if (question.OptionList != null)
             {
-                if (option.OptionImage != null)
+                foreach (var option in question.OptionList)
                 {
-                    var optionImage = _fileRepo.CreateNewFile(option.OptionImage);
-                    option.OptionImage.Id = optionImage.Id;
+                    if (option.OptionImage != null)
+                    {
+                        var optionImage = _fileRepo.CreateNewFile(option.OptionImage);
+                        option.OptionImage.Id = optionImage.Id;
+                    }
+                    if (insertedQuestion != null)
+                    {
+                        option.Question = insertedQuestion;
+                    }
+                    _optionRepo.CreateNewOption(option);
                 }
-                if (insertedQuestion != null)
-                {
-                    option.Question = insertedQuestion;
-                }
-                _optionRepo.CreateNewOption(option);
             }
         }
     }

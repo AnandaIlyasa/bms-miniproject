@@ -40,4 +40,29 @@ internal class ExamPackageRepo : IExamPackageRepo
         examPackage.Id = newExamPackageId;
         return examPackage;
     }
+
+    public int UpdateExamPackage(ExamPackage examPackage)
+    {
+        const string sqlQuery =
+                    "UPDATE " +
+                        "t_r_exam_package " +
+                    "SET " +
+                        "exam_start_datetime = @exam_start, " +
+                        "is_submitted = @is_submitted " +
+                    "WHERE " +
+                        "exam_id = @exam_id";
+
+        var conn = _dbHelper.GetConnection();
+        var sqlCommand = conn.CreateCommand();
+        sqlCommand.CommandText = sqlQuery;
+        sqlCommand.Parameters.AddWithValue("@exam_start", examPackage.ExamStartDateTime);
+        sqlCommand.Parameters.AddWithValue("@is_submitted", examPackage.IsSubmitted);
+        sqlCommand.Parameters.AddWithValue("@exam_id", examPackage.Exam.Id);
+
+        conn.Open();
+        var rowsAffected = (int)(decimal)sqlCommand.ExecuteNonQuery();
+        conn.Close();
+
+        return rowsAffected;
+    }
 }

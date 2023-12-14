@@ -7,7 +7,7 @@ internal class Exam : BaseModel
     public DateTime LoginStart { get; set; }
     public DateTime LoginEnd { get; set; }
     public AcceptanceStatus? AcceptanceStatus { get; set; }
-    public Package Package { get; set; } // not mapped
     public ExamPackage ExamPackage { get; set; } // not mapped
     public List<CandidateAnswer> CandidateAnswerList { get; set; } // not mapped
+    public List<Question> QuestionList { get; set; }
 }

@@ -76,25 +76,28 @@ internal class QuestionRepo : IQuestionRepo
         List<Question> questionList = new List<Question>();
         while (reader.Read())
         {
-            var optText = reader["option_text"] is string ? (string?)reader["option_text"] : null;
-            var optionImage = reader["option_image"] is string ? new BTSFile()
+            MultipleChoiceOption? choiceOpt = null;
+            if (reader["option_char"] is string)
             {
-                FileContent = reader["option_image"] is string ? (string)reader["option_image"] : "",
-                FileExtension = reader["option_image_extension"] is string ? (string)reader["option_image_extension"] : "",
-            } : null;
-            var optChar = reader["option_char"] is string ? (string)reader["option_char"] : "";
-            var choiceOpt = new MultipleChoiceOption()
-            {
-                OptionChar = optChar,
-                OptionText = optText,
-                OptionImage = optionImage
-            };
+                var optText = reader["option_text"] is string ? (string?)reader["option_text"] : null;
+                var optionImage = reader["option_image"] is string ? new BTSFile()
+                {
+                    FileContent = reader["option_image"] is string ? (string)reader["option_image"] : "",
+                    FileExtension = reader["option_image_extension"] is string ? (string)reader["option_image_extension"] : "",
+                } : null;
+                var optChar = reader["option_char"] is string ? (string)reader["option_char"] : "";
+                choiceOpt = new MultipleChoiceOption()
+                {
+                    OptionChar = optChar,
+                    OptionText = optText,
+                    OptionImage = optionImage
+                };
+            }
 
             var questionId = (int)reader["id"];
             var existingQuestion = questionList.Find(q => q.Id == questionId);
-            if (existingQuestion != null)
+            if (existingQuestion != null && choiceOpt != null)
             {
-
                 existingQuestion.OptionList.Add(choiceOpt);
             }
             else
@@ -107,15 +110,21 @@ internal class QuestionRepo : IQuestionRepo
                 var questionText = reader["question"] is string ? (string?)reader["question"] : null;
 
                 var optionList = new List<MultipleChoiceOption>();
-                optionList.Add(choiceOpt);
+                if (choiceOpt != null)
+                {
+                    optionList.Add(choiceOpt);
+                }
 
                 var question = new Question()
                 {
                     Id = questionId,
                     Image = questionImage,
                     QuestionContent = questionText,
-                    OptionList = optionList,
                 };
+                if (optionList.Count > 0)
+                {
+                    question.OptionList = optionList;
+                }
 
                 questionList.Add(question);
             }

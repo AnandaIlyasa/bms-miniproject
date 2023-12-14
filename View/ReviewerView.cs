@@ -8,13 +8,15 @@ internal class ReviewerView : BaseView
 {
     readonly IPackageService _packageService;
     readonly IQuestionService _questionService;
+    readonly IExamService _examService;
 
     User _reviewerUser;
 
-    public ReviewerView(IPackageService packageService, IQuestionService questionService)
+    public ReviewerView(IPackageService packageService, IQuestionService questionService, IExamService examService)
     {
         _packageService = packageService;
         _questionService = questionService;
+        _examService = examService;
     }
 
     public void MainMenu(User user)
@@ -76,8 +78,11 @@ internal class ReviewerView : BaseView
         {
             Console.WriteLine("\n" + package.PackageName + " Question List:");
             var questionList = _questionService.GetQuestionListByPackage(package.Id);
+            var groupedQuestionList = questionList
+                                    .OrderBy(question => question.OptionList == null)
+                                    .ToList();
             var number = 1;
-            foreach (var question in questionList)
+            foreach (var question in groupedQuestionList)
             {
                 var questionImage = question.Image;
                 var questionText = question.QuestionContent;
@@ -87,6 +92,7 @@ internal class ReviewerView : BaseView
                 var optionList = question.OptionList;
                 if (optionList == null || optionList.Count == 0)
                 {
+                    number++;
                     continue;
                 }
                 else
@@ -119,113 +125,106 @@ internal class ReviewerView : BaseView
 
     void AddNewQuestion(Package package)
     {
-        while (true)
+        var noOfQuestion = Utils.GetNumberInputUtil(1, 20, "Insert how many questions to create");
+        Console.WriteLine("\nSelect Question Type");
+        Console.WriteLine("1. Multiple Choice");
+        Console.WriteLine("2. Essay");
+        Console.WriteLine("3. Back");
+        var selectedOpt = Utils.GetNumberInputUtil(1, 3);
+
+        if (selectedOpt == 1)
         {
-            Console.WriteLine("\nSelect Question Type");
-            Console.WriteLine("1. Multiple Choice");
-            Console.WriteLine("2. Essay");
-            Console.WriteLine("3. Back");
-            var selectedOpt = Utils.GetNumberInputUtil(1, 3);
-
-            if (selectedOpt == 1)
+            SelectMultipleChoiceQuestionType(package, noOfQuestion);
+        }
+        else if (selectedOpt == 2)
+        {
+            var questionList = new List<Question>();
+            for (int i = 0; i < noOfQuestion; i++)
             {
-                var success = SelectMultipleChoiceQuestionType(package);
-                if (success)
+                var questionText = Utils.GetStringInputUtil("\nEssay Question");
+                var question = new Question()
                 {
-                    break;
-                }
+                    Package = package,
+                    QuestionContent = questionText,
+                    CreatedBy = _reviewerUser.Id,
+                    CreatedAt = DateTime.Now,
+                    Ver = 0,
+                    IsActive = true,
+                };
+                questionList.Add(question);
             }
-            else if (selectedOpt == 2)
-            {
-                var question = Utils.GetStringInputUtil("Essay Question");
-            }
-            else
-            {
-                break;
-            }
-
-            Console.WriteLine("\nQuestions successfully added!");
+            _questionService.CreateQuestionList(questionList);
+            Console.WriteLine($"\n{noOfQuestion} questions successfully added to {package.PackageName}!");
         }
     }
 
-    bool SelectMultipleChoiceQuestionType(Package package)
+    void SelectMultipleChoiceQuestionType(Package package, int noOfQuestion)
     {
-        while (true)
-        {
-            Console.WriteLine("\nSelect Multiple Choice Question Type");
-            Console.WriteLine("1. Text");
-            Console.WriteLine("2. Image");
-            Console.WriteLine("3. Back");
-            var selectedOpt = Utils.GetNumberInputUtil(1, 3);
+        Console.WriteLine("\nSelect Multiple Choice Question Type");
+        Console.WriteLine("1. Text");
+        Console.WriteLine("2. Image");
+        Console.WriteLine("3. Cancel");
+        var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
-            var questionList = new List<Question>();
-            if (selectedOpt == 1)
+        var questionList = new List<Question>();
+        if (selectedOpt == 1)
+        {
+            for (int i = 0; i < noOfQuestion; i++)
             {
-                var noOfQuestion = Utils.GetNumberInputUtil(1, 20, "Insert how many questions to create");
-                for (int i = 0; i < noOfQuestion; i++)
+                var questionText = Utils.GetStringInputUtil("\nMultiple Choice Question");
+                var optionList = AddOption();
+                if (optionList == null)
                 {
-                    var questionText = Utils.GetStringInputUtil("Multiple Choice Question");
-                    var optionList = AddOption();
-                    if (optionList == null)
+                    return;
+                }
+                var question = new Question()
+                {
+                    Package = package,
+                    QuestionContent = questionText,
+                    OptionList = optionList,
+                    CreatedBy = _reviewerUser.Id,
+                    CreatedAt = DateTime.Now,
+                    Ver = 0,
+                    IsActive = true,
+                };
+                questionList.Add(question);
+            }
+            _questionService.CreateQuestionList(questionList);
+            Console.WriteLine($"\n{noOfQuestion} questions successfully added to {package.PackageName}!");
+        }
+        else if (selectedOpt == 2)
+        {
+            for (int i = 0; i < noOfQuestion; i++)
+            {
+                var questionFilename = Utils.GetStringInputUtil("\nQuestion file name");
+                var questionExtension = Utils.GetStringInputUtil("Question file extension");
+                var optionList = AddOption();
+                if (optionList == null)
+                {
+                    return;
+                }
+                var question = new Question()
+                {
+                    Package = package,
+                    Image = new BTSFile()
                     {
-                        break;
-                    }
-                    var question = new Question()
-                    {
-                        Package = package,
-                        QuestionContent = questionText,
-                        OptionList = optionList,
+                        FileContent = questionFilename,
+                        FileExtension = questionExtension,
                         CreatedBy = _reviewerUser.Id,
                         CreatedAt = DateTime.Now,
                         Ver = 0,
                         IsActive = true,
-                    };
-                    questionList.Add(question);
-                }
-                _questionService.CreateQuestionList(questionList);
-                Console.WriteLine($"\n{noOfQuestion} questions successfully added to {package.PackageName}!");
-                return true;
+                    },
+                    OptionList = optionList,
+                    CreatedBy = _reviewerUser.Id,
+                    CreatedAt = DateTime.Now,
+                    Ver = 0,
+                    IsActive = true,
+                };
+                questionList.Add(question);
             }
-            else if (selectedOpt == 2)
-            {
-                var noOfQuestion = Utils.GetNumberInputUtil(1, 20, "Insert how many questions to create");
-                for (int i = 0; i < noOfQuestion; i++)
-                {
-                    var questionFilename = Utils.GetStringInputUtil("Question file name");
-                    var questionExtension = Utils.GetStringInputUtil("Question file extension");
-                    var optionList = AddOption();
-                    if (optionList == null)
-                    {
-                        break;
-                    }
-                    var question = new Question()
-                    {
-                        Package = package,
-                        Image = new BTSFile()
-                        {
-                            FileContent = questionFilename,
-                            FileExtension = questionExtension,
-                            CreatedBy = _reviewerUser.Id,
-                            CreatedAt = DateTime.Now,
-                            Ver = 0,
-                            IsActive = true,
-                        },
-                        OptionList = optionList,
-                        CreatedBy = _reviewerUser.Id,
-                        CreatedAt = DateTime.Now,
-                        Ver = 0,
-                        IsActive = true,
-                    };
-                    questionList.Add(question);
-                }
-                _questionService.CreateQuestionList(questionList);
-                Console.WriteLine($"\n{noOfQuestion} questions successfully added to {package.PackageName}!");
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            _questionService.CreateQuestionList(questionList);
+            Console.WriteLine($"\n{noOfQuestion} questions successfully added to {package.PackageName}!");
         }
     }
 
@@ -236,7 +235,7 @@ internal class ReviewerView : BaseView
         Console.WriteLine("Select Multiple Choice Option Type");
         Console.WriteLine("1. Text");
         Console.WriteLine("2. Image");
-        Console.WriteLine("3. Back");
+        Console.WriteLine("3. Cancel");
         var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
         List<MultipleChoiceOption> optionList = new List<MultipleChoiceOption>();
@@ -315,42 +314,40 @@ internal class ReviewerView : BaseView
 
     void ShowAssignedExamList()
     {
+        var examList = _examService.GetExamListByReviewer(_reviewerUser.Id);
         while (true)
         {
-            Console.WriteLine("\nExam List");
-            Console.WriteLine("1. JAVA-01 | Submitted | Needs review | Candidate Name : Budiman | 12-12-2023 11:00 - 13:00");
-            Console.WriteLine("2. Back");
-            var selectedOpt = Utils.GetNumberInputUtil(1, 2);
-
-            if (selectedOpt == 1)
+            Console.WriteLine("\nAssigned Exam List:");
+            var number = 1;
+            foreach (var exam in examList)
             {
-                ShowExamDetail();
+                var candidateName = exam.Candidate.FullName;
+                var packageName = exam.ExamPackage.Package.PackageName;
+                var createdAt = exam.CreatedAt.ToString(ISODateTimeFormat);
+                var acceptanceStatus = exam.AcceptanceStatus!.StatusName == "" ? "None" : exam.AcceptanceStatus.StatusName;
+                var submissionStatus = exam.ExamPackage.IsSubmitted == null ? "Not Attempted" : (bool)exam.ExamPackage.IsSubmitted ? "Submitted" : "On Progress";
+                Console.WriteLine($"{number}. Candidate: {candidateName} | Package: {packageName} | Acc Status: {acceptanceStatus} | Submission Status: {submissionStatus} | {createdAt}");
+                number++;
+            }
+            Console.WriteLine(number + ". Back");
+            var selectedOpt = Utils.GetNumberInputUtil(1, number);
+
+            if (selectedOpt == number)
+            {
+                return;
             }
             else
             {
-                return;
+                ShowExamDetail(examList[selectedOpt - 1]);
             }
         }
     }
 
-    void ShowExamDetail()
+    void ShowExamDetail(Exam exam)
     {
         while (true)
         {
-            Console.WriteLine("\n---- JAVA-01 (12-12-2023 11:00 - 13:00) ----");
-            Console.WriteLine("Candidate name : Budiman");
-            Console.WriteLine("Submission status : Submitted");
-            Console.WriteLine("Acceptance status : Needs review");
-            Console.WriteLine("Multiple choice score : 70 / 100\n");
-            Console.WriteLine("Essay answers : ");
-            Console.WriteLine("1. Sebutkan prinsip OOP ke-1");
-            Console.WriteLine("Jawaban : Inheritance");
-            Console.WriteLine("2. Sebutkan prinsip OOP ke-2");
-            Console.WriteLine("Jawaban : Encapsulation");
-            Console.WriteLine("3. Sebutkan prinsip OOP ke-3");
-            Console.WriteLine("Jawaban : Abstraction");
-            Console.WriteLine("4. Sebutkan prinsip OOP ke-4");
-            Console.WriteLine("Jawaban : Polymorphism");
+            base.ShowExamDetail(exam.Id, _examService);
 
             Console.WriteLine("\nSelect Option");
             Console.WriteLine("1. Insert Score and Notes");
@@ -367,7 +364,7 @@ internal class ReviewerView : BaseView
             }
             else if (selectedOpt == 2)
             {
-
+                Console.WriteLine("\nOops, this feature is under development");
             }
             else
             {
