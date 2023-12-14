@@ -6,6 +6,7 @@ using Bts.IRepo;
 using Bts.Model;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 internal class RoleRepo : IRoleRepo
 {
@@ -18,7 +19,16 @@ internal class RoleRepo : IRoleRepo
 
     public List<Role> GetRoleListExcludingSuperadminAndCandidate()
     {
-        const string sqlQuery = "SELECT * FROM t_m_role WHERE role_code != @sa_code AND role_code != @can_code";
+        const string sqlQuery =
+            "SELECT " +
+                "id, " +
+                "role_code, " +
+                "role_name " +
+            "FROM " +
+                "t_m_role " +
+            "WHERE " +
+                "role_code != @sa_code " +
+                "AND role_code != @can_code";
 
         var conn = _dbHelper.GetConnection();
         conn.Open();
@@ -47,7 +57,15 @@ internal class RoleRepo : IRoleRepo
 
     public Role GetCandidateRole()
     {
-        const string sqlQuery = "SELECT * FROM t_m_role WHERE role_code = @can_code";
+        const string sqlQuery =
+            "SELECT " +
+                "id, " +
+                "role_code, " +
+                "role_name " +
+            "FROM " +
+                "t_m_role " +
+            "WHERE " +
+                "role_code = @can_code";
 
         var conn = _dbHelper.GetConnection();
         conn.Open();

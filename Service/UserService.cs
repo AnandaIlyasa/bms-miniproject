@@ -28,6 +28,18 @@ internal class UserService : IUserService
         return roleList;
     }
 
+    public List<User> GetCandidateList()
+    {
+        var candidateList = _userRepo.GetCandidateList();
+        return candidateList;
+    }
+
+    public List<User> GetReviewerList()
+    {
+        var reviewerList = _userRepo.GetReviewerList();
+        return reviewerList;
+    }
+
     public Role GetCandidateRole()
     {
         var candidateRole = _roleRepo.GetCandidateRole();

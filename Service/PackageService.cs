@@ -24,4 +24,10 @@ internal class PackageService : IPackageService
         var packageList = _packageRepo.GetPackageList();
         return packageList;
     }
+
+    public List<Package> GetPackageListByReviewer(User reviewer)
+    {
+        var packageList = _packageRepo.GetPackageListByReviewer(reviewer);
+        return packageList;
+    }
 }

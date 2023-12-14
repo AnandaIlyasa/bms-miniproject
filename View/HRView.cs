@@ -5,16 +5,19 @@ using Bts.Model;
 using Bts.Utils;
 using Bts.IService;
 
-internal class HRView
+internal class HRView : BaseView
 {
     readonly IUserService _userService;
     readonly IPackageService _packageService;
+    readonly IExamService _examService;
+
     User _hrUser;
 
-    public HRView(IUserService userService, IPackageService packageService)
+    public HRView(IUserService userService, IPackageService packageService, IExamService examService)
     {
         _userService = userService;
         _packageService = packageService;
+        _examService = examService;
     }
 
     public void MainMenu(User user)
@@ -44,7 +47,7 @@ internal class HRView
             }
             else if (selectedOpt == 4)
             {
-                //ShowExamList(new List<Exam>());
+                ShowExamList(_examService);
             }
             else
             {
@@ -72,7 +75,7 @@ internal class HRView
         };
         _userService.CreateUser(newCandidate);
 
-        Console.WriteLine($"\nNew {candidateRole.RoleName} {fullName} with email {email} already created!");
+        Console.WriteLine($"\nNew {candidateRole.RoleName} {fullName} with email {email} successfully created!");
     }
 
     void ShowPackageList()
@@ -123,75 +126,116 @@ internal class HRView
 
     void CreateNewExam()
     {
-        var candidateIndex = SelectCandidate();
-        if (candidateIndex == -1) { return; }
+        var candidate = SelectCandidate();
+        if (candidate == null) { return; }
 
-        var reviewerIndex = SelectReviewer();
-        if (reviewerIndex == -1) { return; }
+        var reviewer = SelectReviewer();
+        if (reviewer == null) { return; }
 
-        var packageIndex = SelectPackage();
-        if (packageIndex == -1) { return; }
+        var package = SelectPackage();
+        if (package == null) { return; }
 
-        Console.Write("Insert Login Start Date Time : ");
-        var loginStartDatetime = Console.ReadLine();
-        Console.Write("Insert Login End Date Time : ");
-        var loginEndDatetime = Console.ReadLine();
+        var loginStartDatetime = Utils.GetDateTimeInputUtil("Insert Login Start Date Time", ISODateTimeFormat);
+        var loginEndDatetime = Utils.GetDateTimeInputUtil("Insert Login End Date Time", ISODateTimeFormat);
         var duration = Utils.GetNumberInputUtil(30, 180, "Insert exam duration (in minutes)");
+
+        var exam = new Exam()
+        {
+            Candidate = candidate,
+            Reviewer = reviewer,
+            LoginStart = loginStartDatetime,
+            LoginEnd = loginEndDatetime,
+            CreatedBy = _hrUser.Id,
+            CreatedAt = DateTime.Now,
+            Ver = 0,
+            IsActive = true,
+        };
+
+        var examPackage = new ExamPackage()
+        {
+            Package = package,
+            Exam = exam,
+            Duration = duration,
+            CreatedBy = _hrUser.Id,
+            CreatedAt = DateTime.Now,
+            Ver = 0,
+            IsActive = true,
+        };
+
+        _examService.CreateExam(examPackage);
 
         Console.WriteLine("\nExam successfully created!");
     }
 
-    int SelectCandidate()
+    User? SelectCandidate()
     {
         Console.WriteLine("\nCandidate List");
-        Console.WriteLine("1. Budiman");
-        Console.WriteLine("2. Cancel");
-        var selectedOpt = Utils.GetNumberInputUtil(1, 2, "Select Candidate");
-
-        if (selectedOpt == 1)
+        var candidateList = _userService.GetCandidateList();
+        var number = 1;
+        foreach (var candidate in candidateList)
         {
-            return selectedOpt - 1;
+            Console.WriteLine($"{number}. {candidate.FullName} ({candidate.Email})");
+            number++;
+        }
+        Console.WriteLine(number + ". Cancel");
+        var selectedOpt = Utils.GetNumberInputUtil(1, number, "Select Candidate");
+
+        if (selectedOpt == number)
+        {
+            Console.WriteLine("Create new exam cancelled");
+            return null;
         }
         else
         {
-            Console.WriteLine("Create new exam cancelled");
-            return -1;
+            return candidateList[selectedOpt - 1];
         }
     }
 
-    int SelectReviewer()
+    User? SelectReviewer()
     {
         Console.WriteLine("\nReviewer List");
-        Console.WriteLine("1. Andi");
-        Console.WriteLine("2. Cancel");
-        var selectedOpt = Utils.GetNumberInputUtil(1, 2, "Select Reviewer");
-
-        if (selectedOpt == 1)
+        var reviewerList = _userService.GetReviewerList();
+        var number = 1;
+        foreach (var reviewer in reviewerList)
         {
-            return selectedOpt - 1;
+            Console.WriteLine($"{number}. {reviewer.FullName} ({reviewer.Email})");
+            number++;
+        }
+        Console.WriteLine(number + ". Cancel");
+        var selectedOpt = Utils.GetNumberInputUtil(1, number, "Select Reviewer");
+
+        if (selectedOpt == number)
+        {
+            Console.WriteLine("Create new exam cancelled");
+            return null;
         }
         else
         {
-            Console.WriteLine("Create new exam cancelled");
-            return -1;
+            return reviewerList[selectedOpt - 1];
         }
     }
 
-    int SelectPackage()
+    Package? SelectPackage()
     {
         Console.WriteLine("\nPackage List");
-        Console.WriteLine("1. Java OOP");
-        Console.WriteLine("2. Cancel");
-        var selectedOpt = Utils.GetNumberInputUtil(1, 2, "Select Package");
-
-        if (selectedOpt == 1)
+        var packageList = _packageService.GetPackageList();
+        var number = 1;
+        foreach (var package in packageList)
         {
-            return selectedOpt - 1;
+            Console.WriteLine($"{number}. {package.PackageName} ({package.PackageCode})");
+            number++;
+        }
+        Console.WriteLine(number + ". Cancel");
+        var selectedOpt = Utils.GetNumberInputUtil(1, number, "Select Package");
+
+        if (selectedOpt == number)
+        {
+            Console.WriteLine("Create new exam cancelled");
+            return null;
         }
         else
         {
-            Console.WriteLine("Create new exam cancelled");
-            return -1;
+            return packageList[selectedOpt - 1];
         }
     }
 }

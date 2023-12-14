@@ -1,4 +1,6 @@
-﻿namespace Bts.Utils;
+﻿using System.Globalization;
+
+namespace Bts.Utils;
 
 static class Utils
 {
@@ -34,6 +36,22 @@ static class Utils
             input = Console.ReadLine();
         }
         return input;
+    }
+
+    public static DateTime GetDateTimeInputUtil(string title, string dateTimeFormat)
+    {
+        Console.Write($"{title} (ex: {DateTime.Now.ToString(dateTimeFormat)}): ");
+        DateTime result;
+        var input = Console.ReadLine();
+        var success = DateTime.TryParseExact(input, dateTimeFormat, CultureInfo.CurrentCulture, DateTimeStyles.None, out result);
+        while (success == false)
+        {
+            Console.WriteLine("Please input the datetime in the correct format!");
+            Console.Write($"{title} (ex: {DateTime.Now.ToString(dateTimeFormat)}): ");
+            input = Console.ReadLine();
+            success = DateTime.TryParseExact(input, dateTimeFormat, CultureInfo.CurrentCulture, DateTimeStyles.None, out result);
+        }
+        return result;
     }
 
     public static string GenerateRandomAlphaNumericUtil()

@@ -1,27 +1,40 @@
 ﻿namespace Bts.View;
 
+using Bts.IService;
 using Bts.Model;
 using Bts.Utils;
 
-internal class ReviewerView
+internal class ReviewerView : BaseView
 {
-    public void MainMenu()
+    readonly IPackageService _packageService;
+    readonly IQuestionService _questionService;
+
+    User _reviewerUser;
+
+    public ReviewerView(IPackageService packageService, IQuestionService questionService)
     {
+        _packageService = packageService;
+        _questionService = questionService;
+    }
+
+    public void MainMenu(User user)
+    {
+        _reviewerUser = user;
         while (true)
         {
             Console.WriteLine("\n=== Reviewer Menu ===");
             Console.WriteLine("1. Assigned Package List");
-            Console.WriteLine("2. Show Exam List");
+            Console.WriteLine("2. Assigned Exam List");
             Console.WriteLine("3. Logout");
             var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
             if (selectedOpt == 1)
             {
-                ShowQuestionPackageList();
+                ShowAssignedPackageList();
             }
             else if (selectedOpt == 2)
             {
-                ShowExamList();
+                ShowAssignedExamList(); // NOT DONE
             }
             else
             {
@@ -31,18 +44,71 @@ internal class ReviewerView
         }
     }
 
-    void ShowQuestionPackageList()
+    void ShowAssignedPackageList()
     {
         while (true)
         {
-            Console.WriteLine("\nYour Question Package List");
-            Console.WriteLine("1. Package Java");
+            Console.WriteLine("\nYour Assigned Package List");
+            var packageList = _packageService.GetPackageListByReviewer(_reviewerUser);
+            var number = 1;
+            foreach (var package in packageList)
+            {
+                Console.WriteLine($"{number}. {package.PackageName} ({package.PackageCode})");
+                number++;
+            }
+            Console.WriteLine(number + ". Back");
+            var selectedOpt = Utils.GetNumberInputUtil(1, number, "Select Package");
+
+            if (selectedOpt == number)
+            {
+                break;
+            }
+            else
+            {
+                ShowQuestionList(packageList[selectedOpt - 1]);
+            }
+        }
+    }
+
+    void ShowQuestionList(Package package)
+    {
+        while (true)
+        {
+            Console.WriteLine("\n" + package.PackageName + " Question List:");
+            var questionList = _questionService.GetQuestionListByPackage(package.Id);
+            var number = 1;
+            foreach (var question in questionList)
+            {
+                var questionImage = question.Image;
+                var questionText = question.QuestionContent;
+                var questionString = questionImage?.FileContent == null ? questionText : questionImage?.FileContent + "." + questionImage?.FileExtension;
+                Console.WriteLine($"{number}. {questionString}");
+
+                var optionList = question.OptionList;
+                if (optionList == null || optionList.Count == 0)
+                {
+                    continue;
+                }
+                else
+                {
+                    foreach (var option in optionList)
+                    {
+                        var optChar = option.OptionChar;
+                        var optText = option.OptionText;
+                        var optImage = option.OptionImage;
+                        var optString = optImage?.FileContent == null ? optText : optImage?.FileContent + "." + optImage?.FileExtension;
+                        Console.WriteLine($"   {optChar}) {optString}");
+                    }
+                }
+                number++;
+            }
+            Console.WriteLine("\n1. Add Question");
             Console.WriteLine("2. Back");
             var selectedOpt = Utils.GetNumberInputUtil(1, 2);
 
             if (selectedOpt == 1)
             {
-                ShowQuestionList();
+                AddNewQuestion(package);
             }
             else
             {
@@ -51,27 +117,7 @@ internal class ReviewerView
         }
     }
 
-    void ShowQuestionList()
-    {
-        while (true)
-        {
-            Console.WriteLine("\nJava Package Question List");
-            Console.WriteLine("1. Add New Question");
-            Console.WriteLine("2. Back");
-            var selectedOpt = Utils.GetNumberInputUtil(1, 2);
-
-            if (selectedOpt == 1)
-            {
-                AddNewQuestion();
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
-
-    void AddNewQuestion()
+    void AddNewQuestion(Package package)
     {
         while (true)
         {
@@ -83,7 +129,11 @@ internal class ReviewerView
 
             if (selectedOpt == 1)
             {
-                SelectMultipleChoiceQuestionType();
+                var success = SelectMultipleChoiceQuestionType(package);
+                if (success)
+                {
+                    break;
+                }
             }
             else if (selectedOpt == 2)
             {
@@ -98,7 +148,7 @@ internal class ReviewerView
         }
     }
 
-    void SelectMultipleChoiceQuestionType()
+    bool SelectMultipleChoiceQuestionType(Package package)
     {
         while (true)
         {
@@ -108,31 +158,78 @@ internal class ReviewerView
             Console.WriteLine("3. Back");
             var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
-            string question;
+            var questionList = new List<Question>();
             if (selectedOpt == 1)
             {
                 var noOfQuestion = Utils.GetNumberInputUtil(1, 20, "Insert how many questions to create");
                 for (int i = 0; i < noOfQuestion; i++)
                 {
-                    question = Utils.GetStringInputUtil("Multiple Choice Question");
-                    AddOption(question);
+                    var questionText = Utils.GetStringInputUtil("Multiple Choice Question");
+                    var optionList = AddOption();
+                    if (optionList == null)
+                    {
+                        break;
+                    }
+                    var question = new Question()
+                    {
+                        Package = package,
+                        QuestionContent = questionText,
+                        OptionList = optionList,
+                        CreatedBy = _reviewerUser.Id,
+                        CreatedAt = DateTime.Now,
+                        Ver = 0,
+                        IsActive = true,
+                    };
+                    questionList.Add(question);
                 }
+                _questionService.CreateQuestionList(questionList);
+                Console.WriteLine($"\n{noOfQuestion} questions successfully added to {package.PackageName}!");
+                return true;
             }
             else if (selectedOpt == 2)
             {
-                var questionFilename = Utils.GetStringInputUtil("Question file name");
-                var questionExtension = Utils.GetStringInputUtil("Question file extension");
-                question = questionFilename + "." + questionExtension;
-                AddOption(question);
+                var noOfQuestion = Utils.GetNumberInputUtil(1, 20, "Insert how many questions to create");
+                for (int i = 0; i < noOfQuestion; i++)
+                {
+                    var questionFilename = Utils.GetStringInputUtil("Question file name");
+                    var questionExtension = Utils.GetStringInputUtil("Question file extension");
+                    var optionList = AddOption();
+                    if (optionList == null)
+                    {
+                        break;
+                    }
+                    var question = new Question()
+                    {
+                        Package = package,
+                        Image = new BTSFile()
+                        {
+                            FileContent = questionFilename,
+                            FileExtension = questionExtension,
+                            CreatedBy = _reviewerUser.Id,
+                            CreatedAt = DateTime.Now,
+                            Ver = 0,
+                            IsActive = true,
+                        },
+                        OptionList = optionList,
+                        CreatedBy = _reviewerUser.Id,
+                        CreatedAt = DateTime.Now,
+                        Ver = 0,
+                        IsActive = true,
+                    };
+                    questionList.Add(question);
+                }
+                _questionService.CreateQuestionList(questionList);
+                Console.WriteLine($"\n{noOfQuestion} questions successfully added to {package.PackageName}!");
+                return true;
             }
             else
             {
-                break;
+                return false;
             }
         }
     }
 
-    void AddOption(string question)
+    List<MultipleChoiceOption>? AddOption()
     {
         var numberOfOption = Utils.GetNumberInputUtil(2, 20, "Insert how many options to create");
 
@@ -142,7 +239,7 @@ internal class ReviewerView
         Console.WriteLine("3. Back");
         var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
-        List<MultipleChoiceOption> multipleChoiceOptionList = new List<MultipleChoiceOption>();
+        List<MultipleChoiceOption> optionList = new List<MultipleChoiceOption>();
         if (selectedOpt == 1)
         {
             for (int i = 0; i < numberOfOption; i++)
@@ -154,35 +251,69 @@ internal class ReviewerView
                     OptionChar = optionChar,
                     OptionText = optionContent,
                     IsCorrect = false,
+                    CreatedBy = _reviewerUser.Id,
+                    CreatedAt = DateTime.Now,
+                    Ver = 0,
+                    IsActive = true,
                 };
-                multipleChoiceOptionList.Add(option);
+                optionList.Add(option);
             }
             Console.WriteLine("\nOption list :");
-            Console.WriteLine("1. A) Inheritance");
-            Console.WriteLine("2. B) Encapsulation");
-            var correctOptionId = Utils.GetNumberInputUtil(1, 2, "Select the correct option");
+            var number = 1;
+            foreach (var option in optionList)
+            {
+                Console.WriteLine($"{number}. {option.OptionChar}) {option.OptionText}");
+                number++;
+            }
+            var correctOptionNo = Utils.GetNumberInputUtil(1, number - 1, "Select the correct option");
+            optionList[correctOptionNo - 1].IsCorrect = true;
+            return optionList;
         }
         else if (selectedOpt == 2)
         {
             for (int i = 0; i < numberOfOption; i++)
             {
-                var optionChar = Convert.ToChar(i + 65);
+                var optionChar = Convert.ToChar(i + 65).ToString();
                 var optionFilename = Utils.GetStringInputUtil("Insert option " + optionChar + " file name");
                 var optionExtension = Utils.GetStringInputUtil("Insert option " + optionChar + " file extension");
-                var optionContent = optionFilename + "." + optionExtension;
+                var option = new MultipleChoiceOption()
+                {
+                    OptionChar = optionChar,
+                    OptionImage = new BTSFile()
+                    {
+                        FileContent = optionFilename,
+                        FileExtension = optionExtension,
+                        CreatedBy = _reviewerUser.Id,
+                        CreatedAt = DateTime.Now,
+                        Ver = 0,
+                        IsActive = true,
+                    },
+                    IsCorrect = false,
+                    CreatedBy = _reviewerUser.Id,
+                    CreatedAt = DateTime.Now,
+                    Ver = 0,
+                    IsActive = true,
+                };
+                optionList.Add(option);
             }
             Console.WriteLine("\nOption list :");
-            Console.WriteLine("1. A) Inheritance");
-            Console.WriteLine("2. B) Encapsulation");
-            var correctOptionId = Utils.GetNumberInputUtil(1, 2, "Select the correct option");
+            var number = 1;
+            foreach (var option in optionList)
+            {
+                Console.WriteLine($"{number}. {option.OptionChar}) {option.OptionImage?.FileContent}.{option.OptionImage?.FileExtension}");
+                number++;
+            }
+            var correctOptionNo = Utils.GetNumberInputUtil(1, number - 1, "Select the correct option");
+            optionList[correctOptionNo - 1].IsCorrect = true;
+            return optionList;
         }
         else
         {
-            return;
+            return null;
         }
     }
 
-    void ShowExamList()
+    void ShowAssignedExamList()
     {
         while (true)
         {
@@ -223,15 +354,20 @@ internal class ReviewerView
 
             Console.WriteLine("\nSelect Option");
             Console.WriteLine("1. Insert Score and Notes");
-            Console.WriteLine("2. Back");
-            var selectedEssay = Utils.GetNumberInputUtil(1, 2);
+            Console.WriteLine("2. Show Candidate's Document (CV & Transcript)");
+            Console.WriteLine("3. Back");
+            var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
-            if (selectedEssay == 1)
+            if (selectedOpt == 1)
             {
                 Console.Write("Score : ");
                 var score = (float)Convert.ToDouble(Console.ReadLine());
                 var notes = Utils.GetStringInputUtil("Insert Notes");
                 Console.WriteLine("score : " + score);
+            }
+            else if (selectedOpt == 2)
+            {
+
             }
             else
             {

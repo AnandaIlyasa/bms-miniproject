@@ -9,4 +9,6 @@ internal interface IUserService
     List<User> GetUserListByRole(string roleCode);
     List<Role> GetAllRoleExcludingSuperadminAndCandidate();
     Role GetCandidateRole();
+    List<User> GetCandidateList();
+    List<User> GetReviewerList();
 }

@@ -1,4 +1,5 @@
-﻿using Bts.Helper;
+﻿using Bts.Constant;
+using Bts.Helper;
 using Bts.IRepo;
 using Bts.Model;
 using System.Data.SqlClient;
@@ -16,9 +17,11 @@ internal class UserRepo : IUserRepo
 
     public User CreateNewUser(User user)
     {
-        const string sqlQuery = "INSERT INTO " +
-            "t_m_user(full_name, email, pass, role_id, created_by, created_at, ver, is_active) VALUES " +
-            "(@full_name, @email, @pass, @role_id, @created_by, @created_at, @ver, @is_active) " +
+        const string sqlQuery =
+            "INSERT INTO " +
+                "t_m_user (full_name, email, pass, role_id, created_by, created_at, ver, is_active) " +
+            "VALUES " +
+                "(@full_name, @email, @pass, @role_id, @created_by, @created_at, @ver, @is_active) " +
             "SELECT @@identity";
 
         var conn = _dbHelper.GetConnection();
@@ -39,6 +42,82 @@ internal class UserRepo : IUserRepo
 
         user.Id = newUserId;
         return user;
+    }
+
+    public List<User> GetCandidateList()
+    {
+        const string sqlQuery =
+            "SELECT " +
+                "u.id, " +
+                "u.full_name, " +
+                "u.email " +
+            "FROM " +
+                "t_m_user u " +
+            "JOIN " +
+                "t_m_role r ON u.role_id = r.id " +
+            "WHERE " +
+                "r.role_code = @can_code";
+
+        var conn = _dbHelper.GetConnection();
+        conn.Open();
+
+        var sqlCommand = conn.CreateCommand();
+        sqlCommand.CommandText = sqlQuery;
+        sqlCommand.Parameters.AddWithValue("@can_code", RoleCode.Candidate);
+        var reader = sqlCommand.ExecuteReader();
+        List<User> candidateList = new List<User>();
+        while (reader.Read())
+        {
+            var candidate = new User()
+            {
+                Id = (int)reader["id"],
+                FullName = (string)reader["full_name"],
+                Email = (string)reader["email"],
+            };
+            candidateList.Add(candidate);
+        }
+
+        conn.Close();
+
+        return candidateList;
+    }
+
+    public List<User> GetReviewerList()
+    {
+        const string sqlQuery =
+            "SELECT " +
+                "u.id, " +
+                "u.full_name, " +
+                "u.email " +
+            "FROM " +
+                "t_m_user u " +
+            "JOIN " +
+                "t_m_role r ON u.role_id = r.id " +
+            "WHERE " +
+                "r.role_code = @rev_code";
+
+        var conn = _dbHelper.GetConnection();
+        conn.Open();
+
+        var sqlCommand = conn.CreateCommand();
+        sqlCommand.CommandText = sqlQuery;
+        sqlCommand.Parameters.AddWithValue("@rev_code", RoleCode.Reviewer);
+        var reader = sqlCommand.ExecuteReader();
+        List<User> reviewerList = new List<User>();
+        while (reader.Read())
+        {
+            var reviewer = new User()
+            {
+                Id = (int)reader["id"],
+                FullName = (string)reader["full_name"],
+                Email = (string)reader["email"],
+            };
+            reviewerList.Add(reviewer);
+        }
+
+        conn.Close();
+
+        return reviewerList;
     }
 
     public User? GetUserByEmailAndPassword(string email, string password)

@@ -57,11 +57,11 @@ internal class AuthView
             }
             else if (user.Role.RoleCode == RoleCode.Reviewer)
             {
-                _reviewerView.MainMenu();
+                _reviewerView.MainMenu(user);
             }
             else if (user.Role.RoleCode == RoleCode.Candidate)
             {
-                _candidateView.MainMenu();
+                _candidateView.MainMenu(user);
             }
         }
     }
