@@ -1,7 +1,16 @@
-﻿namespace Bts.Model;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
+namespace Bts.Model;
+
+[Table("t_m_package")]
+[Index(nameof(PackageCode), IsUnique = true, Name = "package_bk")]
 internal class Package : BaseModel
 {
-    public string PackageCode { get; init; }
-    public string PackageName { get; init; }
+    [Column("package_code"), MaxLength(10)]
+    public string PackageCode { get; set; }
+
+    [Column("package_name"), MaxLength(30)]
+    public string PackageName { get; set; }
 }

@@ -1,4 +1,5 @@
-﻿using Bts.IRepo;
+﻿using Bts.Config;
+using Bts.IRepo;
 using Bts.IService;
 using Bts.Model;
 
@@ -15,19 +16,34 @@ internal class PackageService : IPackageService
 
     public Package CreatePackage(Package package)
     {
-        var newPackage = _packageRepo.CreateNewPackage(package);
-        return newPackage;
+        using (var context = new DBContextConfig())
+        {
+            package = _packageRepo.CreateNewPackage(package, context);
+        }
+        return package;
     }
 
     public List<Package> GetPackageList()
     {
-        var packageList = _packageRepo.GetPackageList();
+        var packageList = new List<Package>();
+        using (var context = new DBContextConfig())
+        {
+            packageList = _packageRepo.GetPackageList(context);
+        }
         return packageList;
     }
 
     public List<Package> GetPackageListByReviewer(User reviewer)
     {
-        var packageList = _packageRepo.GetPackageListByReviewer(reviewer);
+        var packageList = new List<Package>();
+        using (var context = new DBContextConfig())
+        {
+            packageList = _packageRepo.GetPackageListByReviewer(reviewer, context);
+        }
+        packageList = packageList
+            .GroupBy(p => p.Id)
+            .Select(p => p.First())
+            .ToList();
         return packageList;
     }
 }

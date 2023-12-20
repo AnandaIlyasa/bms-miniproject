@@ -1,4 +1,5 @@
-﻿using Bts.IRepo;
+﻿using Bts.Config;
+using Bts.IRepo;
 using Bts.IService;
 using Bts.Model;
 
@@ -19,42 +20,53 @@ internal class QuestionService : IQuestionService
 
     public void CreateQuestionList(List<Question> questionList)
     {
-        foreach (Question question in questionList)
+        using (var context = new DBContextConfig())
         {
-            if (question.Image != null)
-            {
-                var questionImage = _fileRepo.CreateNewFile(question.Image);
-                question.Image.Id = questionImage.Id;
-            }
-            var insertedQuestion = _questionRepo.CreateNewQuestion(question);
+            var trx = context.Database.BeginTransaction();
 
-            if (question.OptionList != null)
+            foreach (Question question in questionList)
             {
-                foreach (var option in question.OptionList)
+                if (question.Image != null)
                 {
-                    if (option.OptionImage != null)
+                    var questionImage = _fileRepo.CreateNewFile(question.Image, context);
+                    question.ImageId = questionImage.Id;
+                }
+                var insertedQuestion = _questionRepo.CreateNewQuestion(question, context);
+
+                if (question.OptionList != null && question.OptionList.Count > 0)
+                {
+                    foreach (var option in question.OptionList)
                     {
-                        var optionImage = _fileRepo.CreateNewFile(option.OptionImage);
-                        option.OptionImage.Id = optionImage.Id;
+                        if (option.OptionImage != null)
+                        {
+                            var optionImage = _fileRepo.CreateNewFile(option.OptionImage, context);
+                            option.OptionImageId = optionImage.Id;
+                        }
+                        if (insertedQuestion != null)
+                        {
+                            option.QuestionId = insertedQuestion.Id;
+                        }
+                        _optionRepo.CreateNewOption(option, context);
                     }
-                    if (insertedQuestion != null)
-                    {
-                        option.Question = insertedQuestion;
-                    }
-                    _optionRepo.CreateNewOption(option);
                 }
             }
-        }
-    }
 
-    public List<Question> GetQuestionListByCandidate(int candidateId)
-    {
-        return new List<Question>();
+            trx.Commit();
+        }
     }
 
     public List<Question> GetQuestionListByPackage(int packageId)
     {
-        var questionList = _questionRepo.GetQuestionListByPackage(packageId);
+        var questionList = new List<Question>();
+        using (var context = new DBContextConfig())
+        {
+            questionList = _questionRepo.GetQuestionListByPackage(packageId, context);
+            foreach (var question in questionList)
+            {
+                var optionList = _optionRepo.GetOptionListByQuestion(question.Id, context);
+                question.OptionList = optionList;
+            }
+        }
         return questionList;
     }
 }

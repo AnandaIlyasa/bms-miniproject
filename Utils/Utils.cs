@@ -25,13 +25,13 @@ static class Utils
         return input;
     }
 
-    public static string GetStringInputUtil(string title)
+    public static string GetStringInputUtil(string title, int maxLength = 255)
     {
         Console.Write(title + " : ");
         var input = Console.ReadLine();
-        while (input == "")
+        while (input == "" || input.Length > 255)
         {
-            Console.WriteLine("Please input minimum 1 character!");
+            Console.WriteLine("Please input 1 - " + maxLength + " character");
             Console.Write(title + " : ");
             input = Console.ReadLine();
         }

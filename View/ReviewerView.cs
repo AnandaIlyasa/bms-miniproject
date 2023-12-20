@@ -25,8 +25,8 @@ internal class ReviewerView : BaseView
         while (true)
         {
             Console.WriteLine("\n=== Reviewer Menu ===");
-            Console.WriteLine("1. Assigned Package List");
-            Console.WriteLine("2. Assigned Exam List");
+            Console.WriteLine("1. Show Assigned Package List");
+            Console.WriteLine("2. Show Assigned Exam List");
             Console.WriteLine("3. Logout");
             var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
@@ -36,7 +36,7 @@ internal class ReviewerView : BaseView
             }
             else if (selectedOpt == 2)
             {
-                ShowAssignedExamList(); // NOT DONE
+                ShowAssignedExamList();
             }
             else
             {
@@ -144,12 +144,8 @@ internal class ReviewerView : BaseView
                 var questionText = Utils.GetStringInputUtil("\nEssay Question");
                 var question = new Question()
                 {
-                    Package = package,
+                    PackageId = package.Id,
                     QuestionContent = questionText,
-                    CreatedBy = _reviewerUser.Id,
-                    CreatedAt = DateTime.Now,
-                    Ver = 0,
-                    IsActive = true,
                 };
                 questionList.Add(question);
             }
@@ -179,13 +175,9 @@ internal class ReviewerView : BaseView
                 }
                 var question = new Question()
                 {
-                    Package = package,
+                    PackageId = package.Id,
                     QuestionContent = questionText,
                     OptionList = optionList,
-                    CreatedBy = _reviewerUser.Id,
-                    CreatedAt = DateTime.Now,
-                    Ver = 0,
-                    IsActive = true,
                 };
                 questionList.Add(question);
             }
@@ -205,21 +197,13 @@ internal class ReviewerView : BaseView
                 }
                 var question = new Question()
                 {
-                    Package = package,
+                    PackageId = package.Id,
                     Image = new BTSFile()
                     {
                         FileContent = questionFilename,
                         FileExtension = questionExtension,
-                        CreatedBy = _reviewerUser.Id,
-                        CreatedAt = DateTime.Now,
-                        Ver = 0,
-                        IsActive = true,
                     },
                     OptionList = optionList,
-                    CreatedBy = _reviewerUser.Id,
-                    CreatedAt = DateTime.Now,
-                    Ver = 0,
-                    IsActive = true,
                 };
                 questionList.Add(question);
             }
@@ -250,10 +234,6 @@ internal class ReviewerView : BaseView
                     OptionChar = optionChar,
                     OptionText = optionContent,
                     IsCorrect = false,
-                    CreatedBy = _reviewerUser.Id,
-                    CreatedAt = DateTime.Now,
-                    Ver = 0,
-                    IsActive = true,
                 };
                 optionList.Add(option);
             }
@@ -282,16 +262,8 @@ internal class ReviewerView : BaseView
                     {
                         FileContent = optionFilename,
                         FileExtension = optionExtension,
-                        CreatedBy = _reviewerUser.Id,
-                        CreatedAt = DateTime.Now,
-                        Ver = 0,
-                        IsActive = true,
                     },
                     IsCorrect = false,
-                    CreatedBy = _reviewerUser.Id,
-                    CreatedAt = DateTime.Now,
-                    Ver = 0,
-                    IsActive = true,
                 };
                 optionList.Add(option);
             }
@@ -324,7 +296,7 @@ internal class ReviewerView : BaseView
                 var candidateName = exam.Candidate.FullName;
                 var packageName = exam.ExamPackage.Package.PackageName;
                 var createdAt = exam.CreatedAt.ToString(ISODateTimeFormat);
-                var acceptanceStatus = exam.AcceptanceStatus!.StatusName == "" ? "None" : exam.AcceptanceStatus.StatusName;
+                var acceptanceStatus = exam.AcceptanceStatus == null ? "None" : exam.AcceptanceStatus.StatusName;
                 var submissionStatus = exam.ExamPackage.IsSubmitted == null ? "Not Attempted" : (bool)exam.ExamPackage.IsSubmitted ? "Submitted" : "On Progress";
                 Console.WriteLine($"{number}. Candidate: {candidateName} | Package: {packageName} | Acc Status: {acceptanceStatus} | Submission Status: {submissionStatus} | {createdAt}");
                 number++;
@@ -360,7 +332,13 @@ internal class ReviewerView : BaseView
                 Console.Write("Score : ");
                 var score = (float)Convert.ToDouble(Console.ReadLine());
                 var notes = Utils.GetStringInputUtil("Insert Notes");
-                Console.WriteLine("score : " + score);
+                var examPackage = new ExamPackage()
+                {
+                    ExamId = exam.Id,
+                    ReviewerNotes = notes,
+                    ReviewerScore = score,
+                };
+                _examService.UpdateReviewerScoreAndNotesOnExamPackage(examPackage);
             }
             else if (selectedOpt == 2)
             {

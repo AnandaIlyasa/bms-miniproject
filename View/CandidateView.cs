@@ -21,7 +21,7 @@ internal class CandidateView
         _candidateUser = user;
 
         var exam = _examService.GetExamByCandidate(_candidateUser.Id);
-        if (exam == null)
+        if (exam == null || exam.ExamPackage.IsSubmitted == true || exam.IsActive == false)
         {
             Console.WriteLine("\nYou have no active exam, check your email for exam schedule or contact the HR!");
             return;
@@ -74,20 +74,13 @@ internal class CandidateView
             {
                 FileContent = documentFilename,
                 FileExtension = documentExtension,
-                CreatedBy = _candidateUser.Id,
-                CreatedAt = DateTime.Now,
-                Ver = 0,
-                IsActive = true,
             };
             var candidateDocument = new CandidateDocument()
             {
                 File = file,
-                Candidate = user,
+                CandidateId = user.Id,
+                DocumentTypeId = selectedDocumentType.Id,
                 DocumentType = selectedDocumentType,
-                CreatedBy = _candidateUser.Id,
-                CreatedAt = DateTime.Now,
-                Ver = 0,
-                IsActive = true,
             };
             candidateDocumentList.Add(candidateDocument);
         }
@@ -100,6 +93,7 @@ internal class CandidateView
         Utils.GetNumberInputUtil(1, 1, "Start");
 
         var examStartTime = DateTime.Now;
+        // TODO : update exam package {exam_start_datetime = examStartTime, is_submitted = false}
         var examEndTime = examStartTime.AddMinutes(exam.ExamPackage.Duration);
         var answerList = new List<CandidateAnswer>();
         while (true)
@@ -117,7 +111,7 @@ internal class CandidateView
                 var questionImage = question.Image;
                 var questionText = question.QuestionContent;
                 var questionString = questionImage?.FileContent == null ? questionText : questionImage?.FileContent + "." + questionImage?.FileExtension;
-                var questionAnswer = answerList.Find(ans => ans.Question.Id == question.Id);
+                var questionAnswer = answerList.Find(ans => ans.QuestionId == question.Id);
                 if (questionAnswer != null)
                 {
                     var answer = questionAnswer.AnswerContent == null ? questionAnswer.ChoiceOption?.OptionChar : questionAnswer.AnswerContent;
@@ -153,16 +147,16 @@ internal class CandidateView
             if (selectedOpt == number)
             {
                 Console.WriteLine("\nYou have finished the exam!");
-                exam.ExamPackage.ExamStartDateTime = examStartTime;
+                //exam.ExamPackage.ExamStartDateTime = examStartTime;
                 exam.ExamPackage.IsSubmitted = true;
-                exam.ExamPackage.Exam = new Exam() { Id = exam.Id };
+                exam.ExamPackage.ExamId = exam.Id;
                 _examService.SubmitExam(answerList, exam.ExamPackage);
                 break;
             }
             else
             {
                 var selectedQuestion = groupedQuestionList[selectedOpt - 1];
-                var existingAnswer = answerList.Find(ans => ans.Question.Id == selectedQuestion.Id);
+                var existingAnswer = answerList.Find(ans => ans.QuestionId == selectedQuestion.Id);
                 if (selectedQuestion.OptionList == null || selectedQuestion.OptionList.Count == 0)
                 {
                     var candidateAnswer = Utils.GetStringInputUtil("Your answer");
@@ -170,13 +164,9 @@ internal class CandidateView
                     {
                         var answer = new CandidateAnswer()
                         {
-                            Question = new Question() { Id = selectedQuestion.Id },
-                            ExamPackage = new ExamPackage() { Id = exam.ExamPackage.Id },
+                            QuestionId = selectedQuestion.Id,
+                            ExamPackageId = exam.ExamPackage.Id,
                             AnswerContent = candidateAnswer,
-                            CreatedBy = _candidateUser.Id,
-                            CreatedAt = DateTime.Now,
-                            Ver = 0,
-                            IsActive = true,
                         };
                         answerList.Add(answer);
                     }
@@ -207,13 +197,10 @@ internal class CandidateView
                     {
                         var answer = new CandidateAnswer()
                         {
-                            Question = new Question() { Id = selectedQuestion.Id },
-                            ExamPackage = new ExamPackage() { Id = exam.ExamPackage.Id },
+                            QuestionId = selectedQuestion.Id,
+                            ExamPackageId = exam.ExamPackage.Id,
+                            ChoiceOptionId = selectedOption.Id,
                             ChoiceOption = selectedOption,
-                            CreatedBy = _candidateUser.Id,
-                            CreatedAt = DateTime.Now,
-                            Ver = 0,
-                            IsActive = true,
                         };
                         answerList.Add(answer);
                     }

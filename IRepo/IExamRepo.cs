@@ -1,12 +1,13 @@
 ﻿namespace Bts.IRepo;
 
+using Bts.Config;
 using Bts.Model;
 
 internal interface IExamRepo
 {
-    List<Exam> GetExamList();
-    Exam GetExamById(int examId);
-    Exam? GetExamByCandidate(int candidateId);
-    List<Exam> GetExamListByReviewer(int reviewerId);
-    Exam CreateNewExam(Exam exam);
+    List<Exam> GetExamList(DBContextConfig context);
+    Exam GetExamById(int examId, DBContextConfig context);
+    Exam? GetExamByCandidate(int candidateId, DBContextConfig context);
+    List<Exam> GetExamListByReviewer(int reviewerId, DBContextConfig context);
+    Exam CreateNewExam(Exam exam, DBContextConfig context);
 }

@@ -6,9 +6,9 @@ internal interface IUserService
 {
     User? Login(string email, string password);
     User CreateUser(User user);
-    List<User> GetUserListByRole(string roleCode);
     List<Role> GetAllRoleExcludingSuperadminAndCandidate();
+    Role RoleGetReviewerRole();
     Role GetCandidateRole();
-    List<User> GetCandidateList();
-    List<User> GetReviewerList();
+    List<User> GetCandidateList(int candidateRoleId);
+    List<User> GetReviewerList(int reviewerRoleId);
 }

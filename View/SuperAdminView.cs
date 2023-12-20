@@ -70,11 +70,7 @@ internal class SuperAdminView : BaseView
             FullName = fullName,
             Email = email,
             Pass = Utils.GenerateRandomAlphaNumericUtil(),
-            Role = new Role() { Id = roleId, },
-            CreatedBy = _superadminUser.Id,
-            CreatedAt = DateTime.Now,
-            Ver = 0,
-            IsActive = true,
+            RoleId = roleId,
         };
 
         _userService.CreateUser(newUser);

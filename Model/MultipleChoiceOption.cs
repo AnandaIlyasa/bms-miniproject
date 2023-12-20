@@ -1,10 +1,29 @@
-﻿namespace Bts.Model;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
+namespace Bts.Model;
+
+[Table("t_m_multiple_choice_option")]
 internal class MultipleChoiceOption : BaseModel
 {
-    public string OptionChar { get; init; }
-    public string? OptionText { get; init; }
+    [Column("option_char", TypeName = "char(1)")]
+    public string OptionChar { get; set; }
+
+    [Column("option_text"), MaxLength(255)]
+    public string? OptionText { get; set; }
+
+    [Column("is_correct")]
     public bool IsCorrect { get; set; }
+
+    [Column("question_id")]
+    public int QuestionId { get; set; }
+
+    [ForeignKey(nameof(QuestionId))]
     public Question Question { get; set; }
-    public BTSFile? OptionImage { get; init; }
+
+    [Column("option_image_id")]
+    public int? OptionImageId { get; set; }
+
+    [ForeignKey(nameof(OptionImageId))]
+    public BTSFile? OptionImage { get; set; }
 }

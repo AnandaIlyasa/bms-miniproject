@@ -2,6 +2,7 @@
 
 using Bts.Utils;
 using Bts.IService;
+using Bts.Model;
 
 abstract class BaseView
 {
@@ -17,11 +18,11 @@ abstract class BaseView
             foreach (var exam in examList)
             {
                 var candidateName = exam.Candidate.FullName;
-                var packageName = exam.ExamPackage.Package.PackageName;
                 var createdAt = exam.CreatedAt.ToString(ISODateTimeFormat);
-                var acceptanceStatus = exam.AcceptanceStatus!.StatusName == "" ? "None" : exam.AcceptanceStatus.StatusName;
-                var submissionStatus = exam.ExamPackage.IsSubmitted == null ? "Not Attempted" : (bool)exam.ExamPackage.IsSubmitted ? "Submitted" : "On Progress";
-                Console.WriteLine($"{number}. Candidate: {candidateName} | Package: {packageName} | Acc Status: {acceptanceStatus} | Submission Status: {submissionStatus} | {createdAt}");
+                var acceptanceStatus = exam.AcceptanceStatus is null ? "None" : exam.AcceptanceStatus.StatusName;
+                var submissionStatus = exam.ExamPackage.IsSubmitted == null ? "Not Attempted" :
+                    exam.ExamPackage.IsSubmitted == false ? "In Progress" : "Submitted";
+                Console.WriteLine($"{number}. Candidate: {candidateName} | Package: {exam.ExamPackage.Package.PackageName} | Acc Status: {acceptanceStatus} | Submission Status: {submissionStatus} | Created at: {createdAt}");
                 number++;
             }
             Console.WriteLine(number + ". Back");
@@ -44,7 +45,7 @@ abstract class BaseView
         var packageName = exam.ExamPackage.Package.PackageName;
         var examStartDateTime = exam?.ExamPackage.ExamStartDateTime == null ? "Not Attempted" : exam.ExamPackage.ExamStartDateTime?.ToString(ISODateTimeFormat);
         var submissionStatus = exam?.ExamPackage.IsSubmitted == null ? "Not Attempted" : (bool)exam.ExamPackage.IsSubmitted ? "Submitted" : "On Progress";
-        var acceptanceStatus = exam?.AcceptanceStatus!.StatusName == "" ? "None" : exam.AcceptanceStatus.StatusName;
+        var acceptanceStatus = exam?.AcceptanceStatus == null ? "None" : exam.AcceptanceStatus.StatusName;
         Console.WriteLine($"\n---- {packageName} ({examStartDateTime}) ----");
         Console.WriteLine("Candidate: " + exam.Candidate.FullName);
         Console.WriteLine("Submission status: " + submissionStatus);
@@ -76,7 +77,6 @@ abstract class BaseView
                 {
                     candidateAnswer += answer.ChoiceOption?.OptionImage?.FileContent + "." + answer.ChoiceOption?.OptionImage?.FileExtension;
                 }
-
             }
             Console.WriteLine($"{number}. {question}");
             Console.WriteLine("   Answer: " + candidateAnswer);

@@ -67,11 +67,7 @@ internal class HRView : BaseView
             FullName = fullName,
             Email = email,
             Pass = Utils.GenerateRandomAlphaNumericUtil(),
-            Role = new Role() { Id = candidateRole.Id, },
-            CreatedBy = _hrUser.Id,
-            CreatedAt = DateTime.Now,
-            Ver = 0,
-            IsActive = true,
+            RoleId = candidateRole.Id,
         };
         _userService.CreateUser(newCandidate);
 
@@ -110,14 +106,11 @@ internal class HRView : BaseView
     void CreateNewPackage()
     {
         var packageName = Utils.GetStringInputUtil("Package name");
+        var packageCode = Utils.GetStringInputUtil("Package code", 5);
         var newPackage = new Package()
         {
             PackageName = packageName,
-            PackageCode = Utils.GenerateRandomAlphaNumericUtil(),
-            CreatedBy = _hrUser.Id,
-            CreatedAt = DateTime.Now,
-            Ver = 0,
-            IsActive = true,
+            PackageCode = packageCode,
         };
         _packageService.CreatePackage(newPackage);
 
@@ -141,25 +134,17 @@ internal class HRView : BaseView
 
         var exam = new Exam()
         {
-            Candidate = candidate,
-            Reviewer = reviewer,
+            CandidateId = candidate.Id,
+            ReviewerId = reviewer.Id,
             LoginStart = loginStartDatetime,
             LoginEnd = loginEndDatetime,
-            CreatedBy = _hrUser.Id,
-            CreatedAt = DateTime.Now,
-            Ver = 0,
-            IsActive = true,
         };
 
         var examPackage = new ExamPackage()
         {
-            Package = package,
+            PackageId = package.Id,
             Exam = exam,
             Duration = duration,
-            CreatedBy = _hrUser.Id,
-            CreatedAt = DateTime.Now,
-            Ver = 0,
-            IsActive = true,
         };
 
         _examService.CreateExam(examPackage);
@@ -170,7 +155,8 @@ internal class HRView : BaseView
     User? SelectCandidate()
     {
         Console.WriteLine("\nCandidate List");
-        var candidateList = _userService.GetCandidateList();
+        var candidateRole = _userService.GetCandidateRole();
+        var candidateList = _userService.GetCandidateList(candidateRole.Id);
         var number = 1;
         foreach (var candidate in candidateList)
         {
@@ -194,7 +180,8 @@ internal class HRView : BaseView
     User? SelectReviewer()
     {
         Console.WriteLine("\nReviewer List");
-        var reviewerList = _userService.GetReviewerList();
+        var reviewerRole = _userService.RoleGetReviewerRole();
+        var reviewerList = _userService.GetReviewerList(reviewerRole.Id);
         var number = 1;
         foreach (var reviewer in reviewerList)
         {

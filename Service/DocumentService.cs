@@ -1,4 +1,5 @@
-﻿using Bts.IRepo;
+﻿using Bts.Config;
+using Bts.IRepo;
 using Bts.IService;
 using Bts.Model;
 
@@ -19,23 +20,39 @@ internal class DocumentService : IDocumentService
 
     public List<CandidateDocument> GetCandidateDocumentList(int candidateId)
     {
-        var candidateDocumentList = _candidateDocumentRepo.GetCandidateDocumentList(candidateId);
+        var candidateDocumentList = new List<CandidateDocument>();
+        using (var context = new DBContextConfig())
+        {
+            candidateDocumentList = _candidateDocumentRepo.GetCandidateDocumentList(candidateId, context);
+        }
         return candidateDocumentList;
     }
 
     public List<DocumentType> GetDocumentTypeList()
     {
-        var documentTypeList = _documentTypeRepo.GetDocumentTypeList();
+        var documentTypeList = new List<DocumentType>();
+        using (var context = new DBContextConfig())
+        {
+            documentTypeList = _documentTypeRepo.GetDocumentTypeList(context);
+        }
         return documentTypeList;
     }
 
     public void UploadCandidateDocument(List<CandidateDocument> candidateDocumentList)
     {
-        foreach (var candidateDocument in candidateDocumentList)
+        using (var context = new DBContextConfig())
         {
-            var uploadedFile = _fileRepo.CreateNewFile(candidateDocument.File);
-            candidateDocument.File.Id = uploadedFile.Id;
-            _candidateDocumentRepo.CreateNewCandidateDocument(candidateDocument);
+            var trx = context.Database.BeginTransaction();
+
+            foreach (var candidateDocument in candidateDocumentList)
+            {
+                var uploadedFile = _fileRepo.CreateNewFile(candidateDocument.File, context);
+                candidateDocument.FileId = uploadedFile.Id;
+                candidateDocument.DocumentType = null;
+                _candidateDocumentRepo.CreateNewCandidateDocument(candidateDocument, context);
+            }
+
+            trx.Commit();
         }
     }
 }

@@ -1,9 +1,25 @@
-﻿namespace Bts.Model;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
+namespace Bts.Model;
+
+[Table("t_m_question")]
 internal class Question : BaseModel
 {
-    public string? QuestionContent { get; init; }
-    public Package Package { get; init; }
-    public BTSFile? Image { get; init; }
+    [Column("question")]
+    public string? QuestionContent { get; set; }
+
+    [Column("package_id")]
+    public int PackageId { get; set; }
+
+    [ForeignKey(nameof(PackageId))]
+    public Package Package { get; set; }
+
+    [Column("image_id")]
+    public int? ImageId { get; set; }
+
+    [ForeignKey(nameof(ImageId))]
+    public BTSFile? Image { get; set; }
+
+    [NotMapped]
     public List<MultipleChoiceOption> OptionList { get; set; } // not mapped
 }

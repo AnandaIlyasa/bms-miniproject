@@ -1,427 +1,84 @@
 ﻿namespace Bts.Repo;
 
-using Bts.Helper;
+using Bts.Config;
 using Bts.IRepo;
 using Bts.Model;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
 
 internal class ExamRepo : IExamRepo
 {
-    readonly DatabaseHelper _dbHelper;
-
-    public ExamRepo(DatabaseHelper dbHelper)
+    public Exam CreateNewExam(Exam exam, DBContextConfig context)
     {
-        _dbHelper = dbHelper;
-    }
-
-    public Exam CreateNewExam(Exam exam)
-    {
-        const string sqlQuery =
-            "INSERT INTO " +
-                "t_r_exam (candidate_id, reviewer_id, login_start, login_end, created_by, created_at, ver, is_active) " +
-            "VALUES " +
-                "(@candidate_id, @reviewer_id, @login_start, @login_end, @created_by, @created_at, @ver, @is_active) " +
-            "SELECT @@identity";
-
-        var conn = _dbHelper.GetConnection();
-        var sqlCommand = conn.CreateCommand();
-        sqlCommand.CommandText = sqlQuery;
-        sqlCommand.Parameters.AddWithValue("@candidate_id", exam.Candidate.Id);
-        sqlCommand.Parameters.AddWithValue("@reviewer_id", exam.Reviewer.Id);
-        sqlCommand.Parameters.AddWithValue("@login_start", exam.LoginStart);
-        sqlCommand.Parameters.AddWithValue("@login_end", exam.LoginEnd);
-        sqlCommand.Parameters.AddWithValue("@created_by", exam.CreatedBy);
-        sqlCommand.Parameters.AddWithValue("@created_at", exam.CreatedAt);
-        sqlCommand.Parameters.AddWithValue("@ver", exam.Ver);
-        sqlCommand.Parameters.AddWithValue("@is_active", exam.IsActive);
-
-        conn.Open();
-        var newExamId = (int)(decimal)sqlCommand.ExecuteScalar();
-        conn.Close();
-
-        exam.Id = newExamId;
+        context.Exams.Add(exam);
+        context.SaveChanges();
         return exam;
     }
 
-    public Exam? GetExamByCandidate(int candidateId)
+    public Exam? GetExamByCandidate(int candidateId, DBContextConfig context)
     {
-        var sqlQuery =
-            "SELECT " +
-                "e.id, " +
-                "can.full_name AS candidate_name, " +
-                "p.package_name, " +
-                "ep.is_submitted, " +
-                "ep.duration, " +
-                "ep.id AS exam_package_id, " +
-                "q.question, " +
-                "q.id AS question_id, " +
-                "qi.file_content AS question_image, " +
-                "qi.file_extension AS question_image_extension, " +
-                "mco.id AS option_id, " +
-                "mco.option_char, " +
-                "oi.file_content AS option_image, " +
-                "oi.file_extension AS option_image_extension, " +
-                "mco.option_text " +
-            "FROM " +
-                "t_r_exam e " +
-            "JOIN " +
-                "t_m_user can ON e.candidate_id = can.id " +
-            "JOIN " +
-                "t_r_exam_package ep ON e.id = ep.exam_id " +
-            "JOIN " +
-                "t_m_package p ON ep.package_id = p.id " +
-            "JOIN " +
-                "t_m_question q ON p.id = q.package_id " +
-            "LEFT JOIN " +
-                "t_m_multiple_choice_option mco ON q.id = mco.question_id " +
-            "LEFT JOIN " +
-                "t_m_file qi ON q.image_id = qi.id " +
-            "LEFT JOIN " +
-                "t_m_file oi ON mco.option_image_id = oi.id " +
-            "WHERE " +
-                "can.id = @candidate_id AND " +
-                "(ep.is_submitted = 0 OR ep.is_submitted IS NULL)";
-
-        var conn = _dbHelper.GetConnection();
-        conn.Open();
-
-        var sqlCommand = conn.CreateCommand();
-        sqlCommand.CommandText = sqlQuery;
-        sqlCommand.Parameters.AddWithValue("@candidate_id", candidateId);
-        var reader = sqlCommand.ExecuteReader();
-        Exam? exam = null;
-        List<Question> questionList = new List<Question>();
-        var number = 1;
-        while (reader.Read())
+        var examNotExist = context.Exams
+                        .Where(e => e.CandidateId == candidateId)
+                        .IsNullOrEmpty();
+        if (examNotExist)
         {
-            if (number == 1)
-            {
-                exam = new Exam() { CandidateAnswerList = new List<CandidateAnswer>() };
-                exam.Id = (int)reader["id"];
-                exam.Candidate = new User() { FullName = (string)reader["candidate_name"] };
-                exam.ExamPackage = new ExamPackage()
-                {
-                    Id = (int)reader["exam_package_id"],
-                    IsSubmitted = reader["is_submitted"] as bool?,
-                    Duration = (int)reader["duration"],
-                    Package = new Package() { PackageName = (string)reader["package_name"] },
-                };
-            }
-
-            MultipleChoiceOption? choiceOpt = null;
-            if (reader["option_char"] is string)
-            {
-                var optionImage = reader["option_image"] is string ? new BTSFile()
-                {
-                    FileContent = reader["option_image"] is string ? (string)reader["option_image"] : "",
-                    FileExtension = reader["option_image_extension"] is string ? (string)reader["option_image_extension"] : "",
-                } : null;
-
-                var optText = reader["option_text"] is string ? (string?)reader["option_text"] : null;
-                var optChar = reader["option_char"] is string ? (string)reader["option_char"] : "";
-
-                choiceOpt = new MultipleChoiceOption()
-                {
-                    Id = (int)reader["option_id"],
-                    OptionChar = optChar,
-                    OptionText = optText,
-                    OptionImage = optionImage
-                };
-            }
-
-            var optionList = new List<MultipleChoiceOption>();
-            if (choiceOpt != null)
-            {
-                optionList.Add(choiceOpt);
-            }
-
-            var questionId = (int)reader["question_id"];
-            var existingQuestion = questionList.Find(q => q.Id == questionId);
-            if (existingQuestion != null && choiceOpt != null)
-            {
-                existingQuestion.OptionList.Add(choiceOpt);
-            }
-            else
-            {
-                var questionImage = reader["question_image"] is string ? new BTSFile()
-                {
-                    FileContent = reader["question_image"] is string ? (string)reader["question_image"] : "",
-                    FileExtension = reader["question_image_extension"] is string ? (string)reader["question_image_extension"] : "",
-                } : null;
-                var questionText = reader["question"] is string ? (string?)reader["question"] : null;
-
-                var question = new Question()
-                {
-                    Id = questionId,
-                    Image = questionImage,
-                    QuestionContent = questionText,
-                };
-                if (optionList.Count > 0)
-                {
-                    question.OptionList = optionList;
-                }
-
-                questionList.Add(question);
-            }
-
-            number++;
-        }
-        if (exam != null)
-        {
-            exam.QuestionList = questionList;
+            return null;
         }
 
-        conn.Close();
+        var exam = context.Exams
+            .Where(e => e.CandidateId == candidateId)
+            .Include(e => e.Reviewer)
+            .Include(e => e.Candidate)
+            .Include(e => e.AcceptanceStatus)
+            .First();
+        return exam;
+    }
+
+    public Exam GetExamById(int examId, DBContextConfig context)
+    {
+        var exam = context.Exams
+                    .Where(e => e.Id == examId)
+                    .Include(e => e.Reviewer)
+                    .Include(e => e.Candidate)
+                    .Include(e => e.AcceptanceStatus)
+                    .First();
 
         return exam;
     }
 
-    public Exam GetExamById(int examId)
+    public List<Exam> GetExamListByReviewer(int reviewerId, DBContextConfig context)
     {
-        var sqlQuery =
-            "SELECT " +
-                "e.id, " +
-                "can.full_name AS candidate_name, " +
-                "rev.full_name AS reviewer_name, " +
-                "p.package_name, " +
-                "e.created_at, " +
-                "ep.is_submitted, " +
-                "ep.reviewer_score, " +
-                "ep.reviewer_notes, " +
-                "q.question, " +
-                "qi.file_content AS question_image, " +
-                "qi.file_extension AS question_image_extension, " +
-                "ca.answer_content, " +
-                "mco.option_char, " +
-                "oi.file_content AS option_image, " +
-                "oi.file_extension AS option_image_extension, " +
-                "mco.option_text, " +
-                "acs.status_name " +
-            "FROM " +
-                "t_r_exam e " +
-            "LEFT JOIN " +
-                "t_m_acceptance_status acs ON e.acceptance_status_id = acs.id " +
-            "JOIN " +
-                "t_m_user can ON e.candidate_id = can.id " +
-            "JOIN " +
-                "t_m_user rev ON e.reviewer_id = rev.id " +
-            "JOIN " +
-                "t_r_exam_package ep ON e.id = ep.exam_id " +
-            "JOIN " +
-                "t_m_package p ON ep.package_id = p.id " +
-            "LEFT JOIN " +
-                "t_r_candidate_answer ca ON ep.id = ca.exam_package_id " +
-            "LEFT JOIN " +
-                "t_m_question q ON ca.question_id = q.id " +
-            "LEFT JOIN " +
-                "t_m_multiple_choice_option mco ON ca.choice_option_id = mco.id " +
-            "LEFT JOIN " +
-                "t_m_file qi ON q.image_id = qi.id " +
-            "LEFT JOIN " +
-                "t_m_file oi ON mco.option_image_id = oi.id " +
-             "WHERE " +
-                "e.id = @exam_id";
-
-        var conn = _dbHelper.GetConnection();
-        conn.Open();
-
-        var sqlCommand = conn.CreateCommand();
-        sqlCommand.CommandText = sqlQuery;
-        sqlCommand.Parameters.AddWithValue("@exam_id", examId);
-        var reader = sqlCommand.ExecuteReader();
-        Exam exam = new Exam() { CandidateAnswerList = new List<CandidateAnswer>() };
-        var number = 1;
-        while (reader.Read())
-        {
-            if (number == 1)
-            {
-                exam.Id = (int)reader["id"];
-                exam.CreatedAt = (DateTime)reader["created_at"];
-                exam.Candidate = new User() { FullName = (string)reader["candidate_name"] };
-                exam.Reviewer = new User() { FullName = (string)reader["reviewer_name"] };
-                exam.AcceptanceStatus = new AcceptanceStatus() { StatusName = reader["status_name"] is string ? (string)reader["status_name"] : "" };
-                exam.ExamPackage = new ExamPackage()
-                {
-                    IsSubmitted = reader["is_submitted"] as bool?,
-                    ReviewerScore = reader["reviewer_score"] as float?,
-                    ReviewerNotes = reader["reviewer_notes"] is string ? (string)reader["reviewer_notes"] : null,
-                    Package = new Package() { PackageName = (string)reader["package_name"] },
-                };
-            }
-
-            var questionImage = reader["question_image"] is string ? new BTSFile()
-            {
-                FileContent = reader["question_image"] is string ? (string)reader["question_image"] : "",
-                FileExtension = reader["question_image_extension"] is string ? (string)reader["question_image_extension"] : "",
-            } : null;
-            var questionText = reader["question"] is string ? (string?)reader["question"] : null;
-
-            MultipleChoiceOption? choiceOpt = null;
-            if (reader["option_char"] is string)
-            {
-                var optionImage = reader["option_image"] is string ? new BTSFile()
-                {
-                    FileContent = reader["option_image"] is string ? (string)reader["option_image"] : "",
-                    FileExtension = reader["option_image_extension"] is string ? (string)reader["option_image_extension"] : "",
-                } : null;
-
-                var optText = reader["option_text"] is string ? (string?)reader["option_text"] : null;
-                var optChar = reader["option_char"] is string ? (string)reader["option_char"] : "";
-                choiceOpt = new MultipleChoiceOption()
-                {
-                    OptionChar = optChar,
-                    OptionText = optText,
-                    OptionImage = optionImage
-                };
-            }
-
-            var question = new Question()
-            {
-                Image = questionImage,
-                QuestionContent = questionText,
-            };
-
-            var ansContent = reader["answer_content"] is string ? (string)reader["answer_content"] : null;
-            if (ansContent != null)
-            {
-                var candidateAnswer = new CandidateAnswer()
-                {
-                    AnswerContent = ansContent,
-                    Question = question,
-                };
-                exam.CandidateAnswerList.Add(candidateAnswer);
-            }
-            else if (choiceOpt != null)
-            {
-                var candidateAnswer = new CandidateAnswer()
-                {
-                    Question = question,
-                    ChoiceOption = choiceOpt,
-                };
-                exam.CandidateAnswerList.Add(candidateAnswer);
-            }
-
-            number++;
-        }
-
-        conn.Close();
-
-        return exam;
-    }
-
-    public List<Exam> GetExamListByReviewer(int reviewerId)
-    {
-        const string sqlQuery =
-            "SELECT " +
-                "e.id," +
-                "can.full_name," +
-                "p.package_name," +
-                "e.created_at," +
-                "ep.is_submitted," +
-                "acs.status_name " +
-            "FROM " +
-                "t_r_exam e " +
-            "JOIN " +
-                "t_m_user can ON e.candidate_id = can.id " +
-            "LEFT JOIN " +
-                "t_m_acceptance_status acs ON e.acceptance_status_id = acs.id " +
-            "JOIN " +
-                "t_r_exam_package ep ON e.id = ep.exam_id " +
-            "JOIN " +
-                "t_m_package p ON ep.package_id = p.id " +
-            "WHERE " +
-                "e.reviewer_id = @reviewer_id";
-
-        var conn = _dbHelper.GetConnection();
-        conn.Open();
-
-        var sqlCommand = conn.CreateCommand();
-        sqlCommand.CommandText = sqlQuery;
-        sqlCommand.Parameters.AddWithValue("@reviewer_id", reviewerId);
-        var reader = sqlCommand.ExecuteReader();
-        List<Exam> examList = new List<Exam>();
-        while (reader.Read())
-        {
-            var exam = new Exam()
-            {
-                Id = (int)reader["id"],
-                CreatedAt = (DateTime)reader["created_at"],
-                Candidate = new User()
-                {
-                    FullName = (string)reader["full_name"]
-                },
-                AcceptanceStatus = new AcceptanceStatus()
-                {
-                    StatusName = reader["status_name"] is string ? (string)reader["status_name"] : ""
-                },
-                ExamPackage = new ExamPackage()
-                {
-                    Package = new Package() { PackageName = (string)reader["package_name"] },
-                    IsSubmitted = reader["is_submitted"] as bool?
-                }
-            };
-
-            examList.Add(exam);
-        }
-
-        conn.Close();
+        var examList = context.Exams
+            .Where(e => e.ReviewerId == reviewerId)
+            .Include(e => e.Candidate)
+            .Include(e => e.AcceptanceStatus)
+            .ToList();
 
         return examList;
     }
 
-    public List<Exam> GetExamList()
+    public List<Exam> GetExamList(DBContextConfig context)
     {
-        const string sqlQuery =
-            "SELECT " +
-                "e.id," +
-                "can.full_name," +
-                "p.package_name," +
-                "e.created_at," +
-                "ep.is_submitted," +
-                "acs.status_name " +
-            "FROM " +
-                "t_r_exam e " +
-            "JOIN " +
-                "t_m_user can ON e.candidate_id = can.id " +
-            "LEFT JOIN " +
-                "t_m_acceptance_status acs ON e.acceptance_status_id = acs.id " +
-            "JOIN " +
-                "t_r_exam_package ep ON e.id = ep.exam_id " +
-            "JOIN " +
-                "t_m_package p ON ep.package_id = p.id";
-
-        var conn = _dbHelper.GetConnection();
-        conn.Open();
-
-        var sqlCommand = conn.CreateCommand();
-        sqlCommand.CommandText = sqlQuery;
-        var reader = sqlCommand.ExecuteReader();
-        List<Exam> examList = new List<Exam>();
-        while (reader.Read())
-        {
-            var exam = new Exam()
-            {
-                Id = (int)reader["id"],
-                CreatedAt = (DateTime)reader["created_at"],
-                Candidate = new User()
-                {
-                    FullName = (string)reader["full_name"]
-                },
-                AcceptanceStatus = new AcceptanceStatus()
-                {
-                    StatusName = reader["status_name"] is string ? (string)reader["status_name"] : ""
-                },
-                ExamPackage = new ExamPackage()
-                {
-                    Package = new Package() { PackageName = (string)reader["package_name"] },
-                    IsSubmitted = reader["is_submitted"] as bool?
-                }
-            };
-
-            examList.Add(exam);
-        }
-
-        conn.Close();
+        var examList = context.Exams
+                        .FromSql($@"SELECT 
+                                        e.*,
+                                        can.full_name,
+                                        acs.status_name 
+                                    FROM 
+                                        t_r_exam e 
+                                    JOIN 
+                                        t_m_user can ON e.candidate_id = can.id 
+                                    LEFT JOIN 
+                                        t_m_acceptance_status acs ON e.acceptance_status_id = acs.id 
+                                    JOIN 
+                                        t_r_exam_package ep ON e.id = ep.exam_id 
+                                    JOIN 
+                                        t_m_package p ON ep.package_id = p.id")
+                        .Include(e => e.Candidate)
+                        .Include(e => e.Reviewer)
+                        .Include(e => e.AcceptanceStatus)
+                        .ToList();
 
         return examList;
     }
