@@ -1,0 +1,35 @@
+bikin foreign key image_id di class
+buat table session (pisah antara learning (date) dan session), forum | nanti di learning akan ada ck (date, class_id)
+session ada ck(start, end, date_id)
+ck di attendance (student, session)
+task, session, session_material, forum ada nama
+task ada duration
+bikin task_detail biar pertanyaan sebelumnya bisa dipakai lagi di task yang akan datang.
+ganti task_description jadi task name
+tambah notes di task_submission
+tambah table submission_detail (mengganti table task_answer / task_answer dihilangkan saja)
+ganti task_submission_file -> task_submission_detail_file
+
+bikin util untuk cek tipe yang di return reader
+
+jika join multiple table maka table yang pertama (di depan from) adalah table tempat repositorynya.
+
+candidate, package, created_at, 2 status
+
+kode package jangan generate (input) (done)
+
+jangan filter package di reviewer, reviewer bisa lihat semua package (done)
+
+add feature reviewer bisa lihat cv dan transkrip nilai (done)
+
+pas reviewer masuking score, perhitungannya (score pg + score reviewer) / 2
+
+update exam_start pas start exam (done)
+
+reviewer bisa lihat pertanyaan yang tidak dijawab (done)
+
+pas udah submit is_active di t_m_user dijadikan false untuk candidate
+
+reviewer masukkan acc_status pas insert score (done)
+
+repo harus nerima data bersih, lempar code dari service (done)

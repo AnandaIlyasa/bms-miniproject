@@ -59,7 +59,6 @@ internal class HRView : BaseView
 
     void CreateNewCandidate()
     {
-        var candidateRole = _userService.GetCandidateRole();
         var fullName = Utils.GetStringInputUtil("Full name");
         var email = Utils.GetStringInputUtil("Email");
         var newCandidate = new User()
@@ -67,11 +66,10 @@ internal class HRView : BaseView
             FullName = fullName,
             Email = email,
             Pass = Utils.GenerateRandomAlphaNumericUtil(),
-            RoleId = candidateRole.Id,
         };
-        _userService.CreateUser(newCandidate);
+        _userService.CreateUser(newCandidate, UserRoleCode.Candidate);
 
-        Console.WriteLine($"\nNew {candidateRole.RoleName} {fullName} with email {email} successfully created!");
+        Console.WriteLine($"\nNew candidate {fullName} with email {email} successfully created!");
     }
 
     void ShowPackageList()
@@ -106,7 +104,7 @@ internal class HRView : BaseView
     void CreateNewPackage()
     {
         var packageName = Utils.GetStringInputUtil("Package name");
-        var packageCode = Utils.GetStringInputUtil("Package code", 5);
+        var packageCode = Utils.GetStringInputUtil("Package code");
         var newPackage = new Package()
         {
             PackageName = packageName,
@@ -155,8 +153,7 @@ internal class HRView : BaseView
     User? SelectCandidate()
     {
         Console.WriteLine("\nCandidate List");
-        var candidateRole = _userService.GetCandidateRole();
-        var candidateList = _userService.GetCandidateList(candidateRole.Id);
+        var candidateList = _userService.GetCandidateList();
         var number = 1;
         foreach (var candidate in candidateList)
         {
@@ -180,8 +177,7 @@ internal class HRView : BaseView
     User? SelectReviewer()
     {
         Console.WriteLine("\nReviewer List");
-        var reviewerRole = _userService.RoleGetReviewerRole();
-        var reviewerList = _userService.GetReviewerList(reviewerRole.Id);
+        var reviewerList = _userService.GetReviewerList();
         var number = 1;
         foreach (var reviewer in reviewerList)
         {

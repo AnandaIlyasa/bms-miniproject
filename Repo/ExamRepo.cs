@@ -61,25 +61,23 @@ internal class ExamRepo : IExamRepo
     public List<Exam> GetExamList(DBContextConfig context)
     {
         var examList = context.Exams
-                        .FromSql($@"SELECT 
-                                        e.*,
-                                        can.full_name,
-                                        acs.status_name 
-                                    FROM 
-                                        t_r_exam e 
-                                    JOIN 
-                                        t_m_user can ON e.candidate_id = can.id 
-                                    LEFT JOIN 
-                                        t_m_acceptance_status acs ON e.acceptance_status_id = acs.id 
-                                    JOIN 
-                                        t_r_exam_package ep ON e.id = ep.exam_id 
-                                    JOIN 
-                                        t_m_package p ON ep.package_id = p.id")
                         .Include(e => e.Candidate)
                         .Include(e => e.Reviewer)
                         .Include(e => e.AcceptanceStatus)
                         .ToList();
 
         return examList;
+    }
+
+    public int UpdateAcceptanceStatusOnExam(Exam exam, DBContextConfig context)
+    {
+        var foundExam = context.Exams
+            .Where(e => e.Id == exam.Id)
+            .First();
+
+        foundExam.AcceptanceStatusId = exam.AcceptanceStatusId;
+        foundExam.UpdatedBy = exam.UpdatedBy;
+
+        return context.SaveChanges();
     }
 }

@@ -1,26 +1,17 @@
-select * from t_m_file where id=1 or file_extension='jpg';
-
-select * from t_m_role;
-
-select * from t_m_file;
-
-select * from t_m_user where email = 'andi@gmail.com' AND pass LIKE 'andi123';
-
-SELECT full_name, email, role_code FROM t_m_user u
-                            JOIN t_m_role r ON u.role_id = r.id
-                            WHERE email = 'andi@gmail.com' AND pass LIKE 'andi123';
-
-SELECT * FROM t_r_exam e JOIN t_m_user can ON e.candidate_id = can.id JOIN t_m_user rev ON e.reviewer_id = rev.id LEFT JOIN t_m_acceptance_status acs ON e.acceptance_status_id = acs.id
-
-insert into t_r_exam(candidate_id, reviewer_id, login_start, login_end, acceptance_status_id, created_by, created_at, ver, is_active) values 
-(1,2,getdate(), getdate(), null, 1, getdate(), 0, 1)
+select * from t_m_package
 
 select * from t_r_exam
+update t_r_exam set acceptance_status_id = null where id = 1
 
-INSERT INTO t_r_exam_package (package_id, exam_id, exam_start_datetime, duration, reviewer_notes, reviewer_score, created_by, created_at, ver, is_active) VALUES
-	(1, 1, GETDATE(), 20, 'Belajar lagi yaa', 95, 1, GETDATE(), 1, 1);
+select * from t_r_exam_package
+update t_r_exam_package set is_submitted = null, exam_start_datetime = null, reviewer_notes = null, reviewer_score = null where id = 1
 
-select * from t_r_exam_package;
+select * from t_r_candidate_answer
+TRUNCATE TABLE t_r_candidate_answer;
+
+select * from t_m_user
+
+select * from t_m_acceptance_status
 
 -- get all exams
 SELECT 
@@ -219,3 +210,4 @@ JOIN
     t_m_package p ON ep.package_id = p.id 
 WHERE 
     e.reviewer_id = @reviewer_i
+    

@@ -10,4 +10,5 @@ internal interface IExamRepo
     Exam? GetExamByCandidate(int candidateId, DBContextConfig context);
     List<Exam> GetExamListByReviewer(int reviewerId, DBContextConfig context);
     Exam CreateNewExam(Exam exam, DBContextConfig context);
+    int UpdateAcceptanceStatusOnExam(Exam exam, DBContextConfig context);
 }

@@ -1,4 +1,5 @@
 ﻿using Bts.Config;
+using Bts.Helper;
 using Bts.IRepo;
 using Bts.IService;
 using Bts.Model;
@@ -10,12 +11,14 @@ internal class QuestionService : IQuestionService
     readonly IQuestionRepo _questionRepo;
     readonly IFileRepo _fileRepo;
     readonly IMultipleChoiceOptionRepo _optionRepo;
+    SessionHelper _sessionHelper;
 
-    public QuestionService(IQuestionRepo questionRepo, IFileRepo fileRepo, IMultipleChoiceOptionRepo optionRepo)
+    public QuestionService(IQuestionRepo questionRepo, IFileRepo fileRepo, IMultipleChoiceOptionRepo optionRepo, SessionHelper sessionHelper)
     {
         _questionRepo = questionRepo;
         _fileRepo = fileRepo;
         _optionRepo = optionRepo;
+        _sessionHelper = sessionHelper;
     }
 
     public void CreateQuestionList(List<Question> questionList)
@@ -28,9 +31,11 @@ internal class QuestionService : IQuestionService
             {
                 if (question.Image != null)
                 {
+                    question.Image.CreatedBy = _sessionHelper.UserId;
                     var questionImage = _fileRepo.CreateNewFile(question.Image, context);
                     question.ImageId = questionImage.Id;
                 }
+                question.CreatedBy = _sessionHelper.UserId;
                 var insertedQuestion = _questionRepo.CreateNewQuestion(question, context);
 
                 if (question.OptionList != null && question.OptionList.Count > 0)
@@ -39,6 +44,7 @@ internal class QuestionService : IQuestionService
                     {
                         if (option.OptionImage != null)
                         {
+                            option.OptionImage.CreatedBy = _sessionHelper.UserId;
                             var optionImage = _fileRepo.CreateNewFile(option.OptionImage, context);
                             option.OptionImageId = optionImage.Id;
                         }
@@ -46,6 +52,7 @@ internal class QuestionService : IQuestionService
                         {
                             option.QuestionId = insertedQuestion.Id;
                         }
+                        option.CreatedBy = _sessionHelper.UserId;
                         _optionRepo.CreateNewOption(option, context);
                     }
                 }
@@ -67,6 +74,19 @@ internal class QuestionService : IQuestionService
                 question.OptionList = optionList;
             }
         }
-        return questionList;
+        var groupingQuery = from question in questionList
+                            group question by question.OptionList.Count > 0 into questionGroup
+                            orderby questionGroup.Key
+                            select questionGroup;
+
+        var groupedQuestionList = new List<Question>();
+        foreach (var questionGroup in groupingQuery)
+        {
+            foreach (var question in questionGroup)
+            {
+                groupedQuestionList.Add(question);
+            }
+        }
+        return groupedQuestionList;
     }
 }

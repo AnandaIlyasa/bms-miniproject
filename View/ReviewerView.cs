@@ -3,20 +3,23 @@
 using Bts.IService;
 using Bts.Model;
 using Bts.Utils;
+using Bts.Constant;
 
 internal class ReviewerView : BaseView
 {
     readonly IPackageService _packageService;
     readonly IQuestionService _questionService;
     readonly IExamService _examService;
+    readonly IDocumentService _documentService;
 
     User _reviewerUser;
 
-    public ReviewerView(IPackageService packageService, IQuestionService questionService, IExamService examService)
+    public ReviewerView(IPackageService packageService, IQuestionService questionService, IExamService examService, IDocumentService documentService)
     {
         _packageService = packageService;
         _questionService = questionService;
         _examService = examService;
+        _documentService = documentService;
     }
 
     public void MainMenu(User user)
@@ -25,14 +28,14 @@ internal class ReviewerView : BaseView
         while (true)
         {
             Console.WriteLine("\n=== Reviewer Menu ===");
-            Console.WriteLine("1. Show Assigned Package List");
+            Console.WriteLine("1. Show Package List");
             Console.WriteLine("2. Show Assigned Exam List");
             Console.WriteLine("3. Logout");
             var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
             if (selectedOpt == 1)
             {
-                ShowAssignedPackageList();
+                ShowPackageList();
             }
             else if (selectedOpt == 2)
             {
@@ -46,12 +49,12 @@ internal class ReviewerView : BaseView
         }
     }
 
-    void ShowAssignedPackageList()
+    void ShowPackageList()
     {
         while (true)
         {
             Console.WriteLine("\nYour Assigned Package List");
-            var packageList = _packageService.GetPackageListByReviewer(_reviewerUser);
+            var packageList = _packageService.GetPackageList();
             var number = 1;
             foreach (var package in packageList)
             {
@@ -78,11 +81,9 @@ internal class ReviewerView : BaseView
         {
             Console.WriteLine("\n" + package.PackageName + " Question List:");
             var questionList = _questionService.GetQuestionListByPackage(package.Id);
-            var groupedQuestionList = questionList
-                                    .OrderBy(question => question.OptionList == null)
-                                    .ToList();
+
             var number = 1;
-            foreach (var question in groupedQuestionList)
+            foreach (var question in questionList)
             {
                 var questionImage = question.Image;
                 var questionText = question.QuestionContent;
@@ -322,31 +323,75 @@ internal class ReviewerView : BaseView
             base.ShowExamDetail(exam.Id, _examService);
 
             Console.WriteLine("\nSelect Option");
-            Console.WriteLine("1. Insert Score and Notes");
+            Console.WriteLine("1. Insert Score, Notes, and Acceptance Status");
             Console.WriteLine("2. Show Candidate's Document (CV & Transcript)");
             Console.WriteLine("3. Back");
             var selectedOpt = Utils.GetNumberInputUtil(1, 3);
 
             if (selectedOpt == 1)
             {
-                Console.Write("Score : ");
-                var score = (float)Convert.ToDouble(Console.ReadLine());
-                var notes = Utils.GetStringInputUtil("Insert Notes");
-                var examPackage = new ExamPackage()
-                {
-                    ExamId = exam.Id,
-                    ReviewerNotes = notes,
-                    ReviewerScore = score,
-                };
-                _examService.UpdateReviewerScoreAndNotesOnExamPackage(examPackage);
+                InsertScoreNotesAcceptanceStatus(exam);
             }
             else if (selectedOpt == 2)
             {
-                Console.WriteLine("\nOops, this feature is under development");
+                ShowCandidateCVTranscript(exam);
             }
             else
             {
                 break;
+            }
+        }
+    }
+
+    void InsertScoreNotesAcceptanceStatus(Exam exam)
+    {
+        Console.Write("\nEssay Score : ");
+        var essayScore = Convert.ToDouble(Console.ReadLine());
+        var notes = Utils.GetStringInputUtil("Insert Notes");
+
+        var acceptanceStatusList = _examService.GetAcceptanceStatusList();
+        var filteredStatusList = acceptanceStatusList
+                                .Where(s => s.Code != AcceptanceStatusCode.NeedsReview)
+                                .ToList();
+        var number = 1;
+        foreach (var acceptanceStatuse in filteredStatusList)
+        {
+            Console.WriteLine($"{number}. {acceptanceStatuse.StatusName}");
+            number++;
+        }
+        var selectedOpt = Utils.GetNumberInputUtil(1, number - 1, "Select Acceptance Status");
+        var selectedAcceptanceStatus = filteredStatusList[selectedOpt - 1];
+
+        exam.AcceptanceStatusId = selectedAcceptanceStatus.Id;
+        exam.ExamPackage.ReviewerNotes = notes;
+        exam.ExamPackage.Exam = exam;
+        exam.ExamPackage.ExamId = exam.Id;
+        _examService.InsertScoreNotesAcceptanceStatusOnExamPackage(exam.ExamPackage, essayScore);
+        Console.WriteLine("\nYour review successfully submitted");
+    }
+
+    void ShowCandidateCVTranscript(Exam exam)
+    {
+        while (true)
+        {
+            var documentList = _documentService.GetCandidateCVAndTranscript(exam.CandidateId);
+            var number = 1;
+            foreach (var document in documentList)
+            {
+                Console.WriteLine($"{number}. {document.DocumentType.TypeName}");
+                number++;
+            }
+            Console.WriteLine(number + ". Back");
+            var selectedDocNumber = Utils.GetNumberInputUtil(1, number, "Select Document");
+
+            if (selectedDocNumber == number)
+            {
+                break;
+            }
+            else
+            {
+                var selectedDoc = documentList[selectedDocNumber - 1];
+                Console.WriteLine($"\n{selectedDoc.DocumentType.TypeName} : {selectedDoc.File.FileContent}.{selectedDoc.File.FileExtension}\n");
             }
         }
     }

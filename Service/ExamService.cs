@@ -1,4 +1,6 @@
 ﻿using Bts.Config;
+using Bts.Constant;
+using Bts.Helper;
 using Bts.IRepo;
 using Bts.IService;
 using Bts.Model;
@@ -12,14 +14,30 @@ internal class ExamService : IExamService
     ICandidateAnswerRepo _candidateAnswerRepo;
     IQuestionRepo _questionRepo;
     IMultipleChoiceOptionRepo _optionRepo;
+    IAcceptanceStatusRepo _acceptanceStatusRepo;
+    IUserRepo _userRepo;
+    SessionHelper _sessionHelper;
 
-    public ExamService(IExamRepo examRepo, IExamPackageRepo examPackageRepo, ICandidateAnswerRepo candidateAnswerRepo, IQuestionRepo questionRepo, IMultipleChoiceOptionRepo optionRepo)
+    public ExamService
+    (
+        IExamRepo examRepo,
+        IExamPackageRepo examPackageRepo,
+        ICandidateAnswerRepo candidateAnswerRepo,
+        IQuestionRepo questionRepo,
+        IMultipleChoiceOptionRepo optionRepo,
+        SessionHelper sessionHelper,
+        IAcceptanceStatusRepo acceptanceStatusRepo,
+        IUserRepo userRepo
+    )
     {
         _examRepo = examRepo;
         _examPackageRepo = examPackageRepo;
         _candidateAnswerRepo = candidateAnswerRepo;
         _questionRepo = questionRepo;
         _optionRepo = optionRepo;
+        _sessionHelper = sessionHelper;
+        _acceptanceStatusRepo = acceptanceStatusRepo;
+        _userRepo = userRepo;
     }
 
     public ExamPackage CreateExam(ExamPackage examPackage)
@@ -28,8 +46,11 @@ internal class ExamService : IExamService
         {
             var trx = context.Database.BeginTransaction();
 
+            examPackage.Exam.CreatedBy = _sessionHelper.UserId;
             var newExam = _examRepo.CreateNewExam(examPackage.Exam, context);
+
             examPackage.ExamId = newExam.Id;
+            examPackage.CreatedBy = _sessionHelper.UserId;
             examPackage = _examPackageRepo.CreateNewExamPackage(examPackage, context);
 
             trx.Commit();
@@ -49,6 +70,9 @@ internal class ExamService : IExamService
                 exam.ExamPackage = examPackage;
 
                 var questionList = _questionRepo.GetQuestionListByPackage(examPackage.PackageId, context);
+                questionList = questionList
+                            .OrderBy(question => question.OptionList == null)
+                            .ToList();
                 exam.QuestionList = questionList;
                 foreach (var question in questionList)
                 {
@@ -74,6 +98,9 @@ internal class ExamService : IExamService
             exam.ExamPackage = examPackage;
 
             var questionList = _questionRepo.GetQuestionListByPackage(examPackage.PackageId, context);
+            questionList = questionList
+                            .OrderBy(question => question.OptionList == null)
+                            .ToList();
             exam.QuestionList = questionList;
 
             var candidateAnswerList = _candidateAnswerRepo.GetCandidateAnswerListByExamPackage(examPackage.Id, context);
@@ -116,6 +143,16 @@ internal class ExamService : IExamService
         return examList;
     }
 
+    public void StartExam(ExamPackage examPackage)
+    {
+        using (var context = new DBContextConfig())
+        {
+            examPackage.IsSubmitted = false;
+            examPackage.UpdatedBy = _sessionHelper.UserId;
+            _examPackageRepo.UpdateExamPackage(examPackage, context);
+        }
+    }
+
     public void SubmitExam(List<CandidateAnswer> candidateAnswerList, ExamPackage examPackage)
     {
         using (var context = new DBContextConfig())
@@ -134,6 +171,7 @@ internal class ExamService : IExamService
             foreach (var candidateAnswer in candidateAnswerList)
             {
                 candidateAnswer.ChoiceOption = null;
+                candidateAnswer.CreatedBy = _sessionHelper.UserId;
                 _candidateAnswerRepo.CreateNewCandidateAnswer(candidateAnswer, context);
             }
 
@@ -149,22 +187,54 @@ internal class ExamService : IExamService
                 if (question.OptionList.Count != 0) nMultipleChoiceQuestion++;
             }
 
-            var multipleChoiceScore = (double)((double)nOptionCorrect / (double)nMultipleChoiceQuestion) * 100.0;
+            var multipleChoiceScore = (double)((double)nOptionCorrect / nMultipleChoiceQuestion) * 100.0;
             examPackage.ReviewerScore = multipleChoiceScore;
 
+            var needsReviewStatus = _acceptanceStatusRepo.GetAcceptanceStatusByCode(AcceptanceStatusCode.NeedsReview, context);
+            examPackage.Exam.AcceptanceStatusId = needsReviewStatus.Id;
+            examPackage.Exam.UpdatedBy = _sessionHelper.UserId;
+            _examRepo.UpdateAcceptanceStatusOnExam(examPackage.Exam, context);
+
+            examPackage.IsSubmitted = true;
+            examPackage.UpdatedBy = _sessionHelper.UserId;
+            _examPackageRepo.UpdateExamPackage(examPackage, context);
+
+            var candidate = _userRepo.GetUserById(_sessionHelper.UserId, context);
+            candidate.IsActive = false;
+            candidate.UpdatedBy = _sessionHelper.UserId;
+            _userRepo.UpdateUserIsActive(candidate, context);
+
+            trx.Commit();
+        }
+    }
+
+    public void InsertScoreNotesAcceptanceStatusOnExamPackage(ExamPackage examPackage, double essayScore)
+    {
+        using (var context = new DBContextConfig())
+        {
+            var trx = context.Database.BeginTransaction();
+
+            examPackage.Exam.UpdatedBy = _sessionHelper.UserId;
+            _examRepo.UpdateAcceptanceStatusOnExam(examPackage.Exam, context);
+
+            var multipleChoiceScore = examPackage.ReviewerScore;
+            var finalScore = (multipleChoiceScore + essayScore) / 2.0d;
+
+            examPackage.ReviewerScore = finalScore;
+            examPackage.UpdatedBy = _sessionHelper.UserId;
             _examPackageRepo.UpdateExamPackage(examPackage, context);
 
             trx.Commit();
         }
     }
 
-    public void UpdateReviewerScoreAndNotesOnExamPackage(ExamPackage examPackage)
+    public List<AcceptanceStatus> GetAcceptanceStatusList()
     {
+        var acceptanceStatusList = new List<AcceptanceStatus>();
         using (var context = new DBContextConfig())
         {
-            _examPackageRepo.UpdateExamPackage(examPackage, context);
+            acceptanceStatusList = _acceptanceStatusRepo.GetAcceptanceStatusList(context);
         }
+        return acceptanceStatusList;
     }
-
-    // TODO : Update Exam Package when candidate start the exam
 }

@@ -2,7 +2,7 @@
 
 namespace Bts.Utils;
 
-static class Utils
+public static class Utils
 {
     public static int GetNumberInputUtil(int lowerBound, int upperBound, string title = "Your option") // Get number input
     {
@@ -25,13 +25,13 @@ static class Utils
         return input;
     }
 
-    public static string GetStringInputUtil(string title, int maxLength = 255)
+    public static string GetStringInputUtil(string title)
     {
-        Console.Write(title + " : ");
+        Console.Write($"{title} : ");
         var input = Console.ReadLine();
         while (input == "" || input.Length > 255)
         {
-            Console.WriteLine("Please input 1 - " + maxLength + " character");
+            Console.WriteLine("Please input minimum 1 character");
             Console.Write(title + " : ");
             input = Console.ReadLine();
         }

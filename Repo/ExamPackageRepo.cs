@@ -31,21 +31,12 @@ internal class ExamPackageRepo : IExamPackageRepo
             .Where(ep => ep.ExamId == examPackage.ExamId)
             .First();
 
-        foundExamPackage.ExamStartDateTime = examPackage.ExamStartDateTime;
         foundExamPackage.IsSubmitted = examPackage.IsSubmitted;
-        foundExamPackage.ReviewerNotes = examPackage.ReviewerNotes;
         foundExamPackage.ReviewerScore = examPackage.ReviewerScore;
-
-        return context.SaveChanges();
-    }
-
-    public int UpdateReviewerScoreAndNotesOnExamPackage(ExamPackage examPackage, DBContextConfig context)
-    {
-        var foundExamPackage = context.ExamPackages
-            .Where(ep => ep.ExamId == examPackage.ExamId)
-            .First();
-        foundExamPackage.ReviewerScore = examPackage.ReviewerScore;
+        foundExamPackage.ExamStartDateTime = examPackage.ExamStartDateTime;
         foundExamPackage.ReviewerNotes = examPackage.ReviewerNotes;
+        foundExamPackage.UpdatedBy = examPackage.UpdatedBy;
+
         return context.SaveChanges();
     }
 }

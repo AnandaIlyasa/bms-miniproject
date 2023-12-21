@@ -1,5 +1,6 @@
 ﻿using Bts.Model;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace Bts.Config;
 
@@ -25,5 +26,6 @@ internal class DBContextConfig : DbContext
         const string connString = $"Server={host}; Initial Catalog={db}; Integrated Security=True; TrustServerCertificate=True";
 
         optionsBuilder.UseSqlServer(connString);
+        //optionsBuilder.LogTo(message => Debug.WriteLine(message));
     }
 }

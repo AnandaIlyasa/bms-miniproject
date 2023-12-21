@@ -7,15 +7,13 @@ using System.Collections.Generic;
 
 internal class RoleRepo : IRoleRepo
 {
-    public List<Role> GetRoleListExcludingSuperadminAndCandidate(string superadminRoleCode, string candidateRoleCode, DBContextConfig context)
+    public List<Role> GetRoleList(DBContextConfig context)
     {
-        var roleList = context.Roles
-                        .Where(r => r.RoleCode != candidateRoleCode && r.RoleCode != superadminRoleCode)
-                        .ToList();
+        var roleList = context.Roles.ToList();
         return roleList;
     }
 
-    public Role GetCandidateRole(string candidateRoleCode, DBContextConfig context)
+    public Role GetRoleByCode(string candidateRoleCode, DBContextConfig context)
     {
         var candidateRole = context.Roles.Where(r => r.RoleCode == candidateRoleCode).First();
         return candidateRole;

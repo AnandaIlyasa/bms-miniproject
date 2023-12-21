@@ -47,19 +47,19 @@ internal class AuthView
                 user = _userService.Login(email, password);
             }
 
-            if (user.Role.RoleCode == RoleCode.SuperAdmin)
+            if (user.Role.RoleCode == UserRoleCode.SuperAdmin)
             {
                 _superAdminView.MainMenu(user);
             }
-            else if (user.Role.RoleCode == RoleCode.HumanResource)
+            else if (user.Role.RoleCode == UserRoleCode.HumanResource)
             {
                 _hrView.MainMenu(user);
             }
-            else if (user.Role.RoleCode == RoleCode.Reviewer)
+            else if (user.Role.RoleCode == UserRoleCode.Reviewer)
             {
                 _reviewerView.MainMenu(user);
             }
-            else if (user.Role.RoleCode == RoleCode.Candidate)
+            else if (user.Role.RoleCode == UserRoleCode.Candidate)
             {
                 _candidateView.MainMenu(user);
             }

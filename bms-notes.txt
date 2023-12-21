@@ -1,0 +1,39 @@
+ingat nullable
+varchar, char, text -> string
+datetime -> datetime
+date -> dateonly
+time -> timeonly
+
+base model abstract
+
+super admin membuat user yaitu hr dan reviewer
+
+hr bikin package
+
+reviewer bikin soal dan assign soal ke package nya
+
+hr bikin candidate
+
+hr assign soal dan reviewer ke candidate
+
+candidate-login-upload doc-ngerjain soal-submit
+
+reviewer-koreksi score & note
+
+reviewer notes dan essay score 1 aja per exam
+
+candidate dipaksa upload dokumen dulu di page utama
+
+semua role bisa lihat hasil exam tapi cuma reviewer yang bisa edit
+
+ketika reviewer membuat soal multiple choice, tanya mau berapa option
+
+ada input mau bikin berapa soal?
+
+setelah submit langsung logout gabisa login lagi
+
+bikin userService untuk bikin user, login
+
+ISO datetime format
+
+show all packages di hr

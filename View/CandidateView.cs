@@ -27,19 +27,9 @@ internal class CandidateView
             return;
         }
 
-        var candidateDocumentList = _documentService.GetCandidateDocumentList(user.Id);
-        var documentTypeList = _documentService.GetDocumentTypeList();
-        var allDocumentIsUploaded = true;
-        foreach (var documentType in documentTypeList)
-        {
-            if (candidateDocumentList.Exists(cd => cd.DocumentType.TypeName == documentType.TypeName) == false)
-            {
-                allDocumentIsUploaded = false;
-                break;
-            }
-        }
-
-        if (allDocumentIsUploaded)
+        var candidateDocumentHelper = _documentService.GetCandidateDocumentList(user.Id);
+        var candidateDocumentList = candidateDocumentHelper.CandidateDocumentList;
+        if (candidateDocumentHelper.AllDocumentIsUploaded)
         {
             StartExam(exam);
             return;
@@ -47,6 +37,7 @@ internal class CandidateView
 
         while (true)
         {
+            var documentTypeList = _documentService.GetDocumentTypeList();
             var remainingDocumentTypeList = documentTypeList
                                             .Where(dt => candidateDocumentList.Exists(cd => cd.DocumentType.TypeName == dt.TypeName) == false)
                                             .ToList();
@@ -93,20 +84,18 @@ internal class CandidateView
         Utils.GetNumberInputUtil(1, 1, "Start");
 
         var examStartTime = DateTime.Now;
-        // TODO : update exam package {exam_start_datetime = examStartTime, is_submitted = false}
         var examEndTime = examStartTime.AddMinutes(exam.ExamPackage.Duration);
         var answerList = new List<CandidateAnswer>();
+        exam.ExamPackage.ExamStartDateTime = examStartTime;
+        _examService.StartExam(exam.ExamPackage);
         while (true)
         {
             var timeRemaining = examEndTime - DateTime.Now;
             Console.WriteLine($"\n---- {exam.ExamPackage.Package.PackageName} (Time remaining: {timeRemaining.Minutes} minutes) ----");
             Console.WriteLine("Candidate: " + exam.Candidate.FullName + "\n");
 
-            var groupedQuestionList = exam.QuestionList
-                                    .OrderBy(question => question.OptionList == null)
-                                    .ToList();
             var number = 1;
-            foreach (var question in groupedQuestionList)
+            foreach (var question in exam.QuestionList)
             {
                 var questionImage = question.Image;
                 var questionText = question.QuestionContent;
@@ -147,7 +136,6 @@ internal class CandidateView
             if (selectedOpt == number)
             {
                 Console.WriteLine("\nYou have finished the exam!");
-                //exam.ExamPackage.ExamStartDateTime = examStartTime;
                 exam.ExamPackage.IsSubmitted = true;
                 exam.ExamPackage.ExamId = exam.Id;
                 _examService.SubmitExam(answerList, exam.ExamPackage);
@@ -155,7 +143,7 @@ internal class CandidateView
             }
             else
             {
-                var selectedQuestion = groupedQuestionList[selectedOpt - 1];
+                var selectedQuestion = exam.QuestionList[selectedOpt - 1];
                 var existingAnswer = answerList.Find(ans => ans.QuestionId == selectedQuestion.Id);
                 if (selectedQuestion.OptionList == null || selectedQuestion.OptionList.Count == 0)
                 {

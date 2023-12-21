@@ -7,12 +7,15 @@ using Bts.IService;
 using Bts.View;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Bts.Helper;
 
 internal class DIConfig
 {
     public static IHost Init()
     {
         var builder = Host.CreateApplicationBuilder();
+
+        builder.Services.AddSingleton<SessionHelper>();
 
         builder.Services.AddSingleton<IUserRepo, UserRepo>();
         builder.Services.AddSingleton<IRoleRepo, RoleRepo>();
@@ -25,6 +28,7 @@ internal class DIConfig
         builder.Services.AddSingleton<IDocumentTypeRepo, DocumentTypeRepo>();
         builder.Services.AddSingleton<ICandidateDocumentRepo, CandidateDocumentRepo>();
         builder.Services.AddSingleton<ICandidateAnswerRepo, CandidateAnswerRepo>();
+        builder.Services.AddSingleton<IAcceptanceStatusRepo, AcceptanceStatusRepo>();
 
         builder.Services.AddSingleton<IUserService, UserService>();
         builder.Services.AddSingleton<IExamService, ExamService>();

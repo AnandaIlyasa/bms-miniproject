@@ -1,6 +1,6 @@
 ﻿namespace Bts.Constant;
 
-internal static class RoleCode
+internal static class UserRoleCode
 {
     public static readonly string SuperAdmin = "SA";
     public static readonly string HumanResource = "HR";

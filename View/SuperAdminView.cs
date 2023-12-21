@@ -46,7 +46,7 @@ internal class SuperAdminView : BaseView
     void CreateNewUser()
     {
         Console.WriteLine("\nSelect Role");
-        var roleList = _userService.GetAllRoleExcludingSuperadminAndCandidate();
+        var roleList = _userService.GetReviewerAndHRRole();
         var number = 1;
         foreach (var role in roleList)
         {
@@ -56,26 +56,27 @@ internal class SuperAdminView : BaseView
         Console.WriteLine(number + ". Cancel");
         var selectedOpt = Utils.GetNumberInputUtil(1, number);
 
+        string? roleCode;
         if (selectedOpt == number)
         {
             Console.WriteLine("\nCreate new user cancelled");
             return;
         }
+        else
+        {
+            roleCode = roleList[selectedOpt - 1].RoleCode;
+        }
 
-        var roleId = roleList[selectedOpt - 1].Id;
         var fullName = Utils.GetStringInputUtil("Full name");
         var email = Utils.GetStringInputUtil("Email");
         var newUser = new User()
         {
             FullName = fullName,
             Email = email,
-            Pass = Utils.GenerateRandomAlphaNumericUtil(),
-            RoleId = roleId,
         };
 
-        _userService.CreateUser(newUser);
+        _userService.CreateUser(newUser, roleCode);
 
-        var createdRoleName = roleList.Find(role => role.Id == roleId)!.RoleName;
-        Console.WriteLine($"\nNew {createdRoleName} for {fullName} with email {email} successfully created!");
+        Console.WriteLine($"\nNew user for {fullName} with email {email} successfully created!");
     }
 }
